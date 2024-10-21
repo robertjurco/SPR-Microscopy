@@ -10,6 +10,7 @@ class RightBarGUI(QWidget):
         super().__init__()
 
         # Load devices panel
+        self.settings_bar = CameraSettingsGUI(0)
         self.camera_bar = GUICamera()
         self.slm_bar = GUICamera()
         self.shifts_bar = GUICamera()
@@ -31,7 +32,7 @@ class RightBarGUI(QWidget):
 
         # Connected label
         connected_label = QLabel('--- Connected devices ---')
-        connected_label.setAlignment(Qt.AlignCenter)
+        connected_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         connected_label.setStyleSheet("font-size: 18px; font-weight: bold;")
         H_layout.addWidget(connected_label)
 
@@ -52,8 +53,7 @@ class RightBarGUI(QWidget):
 
 
         # Settings panel
-        settings_bar = CameraSettingsGUI("...", 100, 200, 300)
-        splitter.addWidget(settings_bar)
+        splitter.addWidget(self.settings_bar)
 
         # Splitter
         splitter.setStretchFactor(0, 1)

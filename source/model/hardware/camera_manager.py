@@ -62,12 +62,15 @@ class CameraManager(QObject):
         }
         return info
 
-    def get_all_cameras_settings(self):
-        info = {
-            "name": {i: self.loaded_cameras[i].get_name() for i in self.loaded_cameras},
-            "exposure": {i: self.loaded_cameras[i].get_exposure() for i in self.loaded_cameras},
+    def get_camera_settings(self, i):
+        self.loaded_cameras[i].get_gain()
+        settings = {
+           # "device_name": {i: self.loaded_cameras[i].get_name() for i in self.loaded_cameras},
             "width": {i: self.loaded_cameras[i].get_width() for i in self.loaded_cameras},
             "height": {i: self.loaded_cameras[i].get_height() for i in self.loaded_cameras},
-            "bitdepth": {i: self.loaded_cameras[i].get_bitdepth() for i in self.loaded_cameras}
+            "bitdepth": {i: self.loaded_cameras[i].get_bitdepth() for i in self.loaded_cameras},
+            "exposure": {i: self.loaded_cameras[i].get_exposure() for i in self.loaded_cameras},
+            "gain": {i: self.loaded_cameras[i].get_gain() for i in self.loaded_cameras},
+            "frame_rate": {i: self.loaded_cameras[i].get_frame_rate() for i in self.loaded_cameras}
         }
-        return info
+        return settings

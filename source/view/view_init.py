@@ -51,6 +51,8 @@ class View(QMainWindow):
         self.tool_help.setStatusTip("[help]")
         toolbar.addAction(self.tool_help)
 
+        print("Toolbar initialized")
+
         ################################################################################################################
         # general layout of the gui (for now just one box)
         layout = QHBoxLayout()
@@ -60,14 +62,16 @@ class View(QMainWindow):
 
         # Central widget
         splitter.addWidget(self.central_widget_gui)
-
         # Right panel
         self.right_bar_gui = RightBarGUI()
+        print("Right_bar initialized.")
         self.right_bar_gui.setMinimumWidth(200)
         splitter.addWidget(self.right_bar_gui)
         splitter.setStretchFactor(0, 7)
         splitter.setStretchFactor(1, 1)
         layout.addWidget(splitter)
+
+        print("Layout initialized")
 
         ################################################################################################################
         # Status bar
@@ -81,7 +85,6 @@ class View(QMainWindow):
         widget.setLayout(layout)
         #widget.setMinimumSize(600, 400)
         self.setCentralWidget(widget)
-
         ################################################################################################################
         # window title
         self.setWindowTitle("SPR Microscopy")

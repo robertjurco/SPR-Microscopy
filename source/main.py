@@ -46,11 +46,13 @@ if __name__ == '__main__':
 
     # Model: Contains the data and the long-running task.
     model = Model()
+    print("Model initialized")
 
     # View: Manages the GUI components.
     # .show() is a property of QWidget: View extends QMainWindow, QMainWindow extends QWidget.
     view = View()
     view.show()
+    print("View initialized")
 
     # Presenter: Handles the interaction between the Model and the View,
     # including starting the background task and updating the view when the task is complete.

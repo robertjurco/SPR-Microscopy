@@ -59,7 +59,8 @@ class CameraPresenter:
 
     @Slot(int)
     def handle_settings_button_pressed(self, index):
-        pass
+        settings = self.model.camera_manager.get_camera_settings(index)
+        self.view.right_bar_gui.settings_bar.fetch_camera_settings(index, settings)
 
     @Slot(int)
     def handle_reload_button_pressed(self, index):
