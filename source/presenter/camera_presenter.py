@@ -1,3 +1,5 @@
+from time import process_time_ns
+
 from PySide6.QtCore import Slot, QThread
 
 """
