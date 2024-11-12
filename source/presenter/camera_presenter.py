@@ -8,6 +8,7 @@ Communication between Camera manager and camera GUI classes.
 
 class CameraPresenter:
     def __init__(self, model, view):
+        self.threads = {}
         self.model = model
         self.view = view
 
@@ -53,11 +54,11 @@ class CameraPresenter:
         self.view.central_widget_gui.add_camera_tab(index)
 
         # create an image acquisition link
-        self.model.camera_manager.loaded_cameras[index].frame_acquired.connect(self.view.central_widget_gui.camera_tab[index].set_image)
+        camera = self.model.camera_manager.loaded_cameras[index]
+        camera.frame_acquired.connect(lambda image, idx=index: self.view.central_widget_gui.set_image(idx, image))
 
-        self.thread = QThread()
-        self.model.camera_manager.loaded_cameras[index].moveToThread(self.thread)
-        self.thread.started.connect(self.model.camera_manager.loaded_cameras[index].run)
+        # call create new thread in camera manager
+        self.model.camera_manager.start_image_acquisition_camera(index)
 
     @Slot(int)
     def handle_settings_button_pressed(self, index):

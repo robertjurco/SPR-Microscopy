@@ -1,8 +1,45 @@
+import time
 import traceback
-from PySide6.QtCore import QRunnable, QObject, Signal
+from PySide6.QtCore import QRunnable, QObject, Signal, QThread
+from PySide6.QtGui import QPixmap
 
-class Camera:
+
+class CameraWorker(QThread):
+
+    def __init__(self, camera):
+        super().__init__()
+        self.camera = camera
+        self.running = False
+
+    def run(self):
+        """Starts the camera capture thread.
+
+        Raises
+        ------
+        NotImplementedError
+            If the method is not implemented.
+        """
+        self.running = True
+        while self.running:
+            start_time = time.time()
+            self.camera.acquire_image()
+            time.sleep(1.0 / self.camera.get_frame_rate())
+
+
+    def stop(self):
+        """Stops the camera capture thread.
+
+        Raises
+        ------
+        NotImplementedError
+            If the method is not implemented.
+        """
+        self.running = False
+
+
+class Camera(QObject):
     """Abstract class for cameras."""
+    frame_acquired = Signal(object)
 
     def __init__(self):
         super().__init__()
@@ -28,32 +65,22 @@ class Camera:
         """
         raise NotImplementedError()
 
-    def run(self):
-        """Starts the camera capture thread.
-
-        Raises
-        ------
-        NotImplementedError
-            If the method is not implemented.
-        """
-        raise NotImplementedError()
-
-    def stop(self):
-        """Stops the camera capture thread.
-
-        Raises
-        ------
-        NotImplementedError
-            If the method is not implemented.
-        """
-        raise NotImplementedError()
-
     def autoexposure(self):
         """Enables the camera's auto exposure feature."""
         pass
 
     def flush(self):
         """Cycles the image buffer so that all new get_image() calls yield fresh frames.
+
+        Raises
+        ------
+        NotImplementedError
+            If the method is not implemented.
+        """
+        raise NotImplementedError()
+
+    def acquire_image(self):
+        """Acquires an image from the camera.
 
         Raises
         ------

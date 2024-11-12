@@ -4,9 +4,10 @@ It emits signals when cameras are connected or disconnected.
 """
 from warnings import catch_warnings
 
-from PySide6.QtCore import QObject, Signal, QThread, QThreadPool
+from PySide6.QtCore import QObject, Signal, QThread, QThreadPool, Slot
 from pypylon import pylon
 
+from source.model.hardware.camera import CameraWorker
 from source.model.hardware.cameras.basler import Basler
 
 
@@ -24,12 +25,15 @@ class CameraManager(QObject):
     # Signals to connect to slots
     camera_connected = Signal(int)
     camera_disconnected = Signal(int)
+    frame_acquired_ = Signal(int, object)
 
     def __init__(self):
         super().__init__()
 
+        self.threads = {}
         self.connected_cameras = {}
         self.loaded_cameras = {}
+        self.cam_worker = {}
 
     def detect_cameras(self):
         # Detect all connected cameras, add new cameras to connected list
@@ -46,6 +50,7 @@ class CameraManager(QObject):
             # TODO: Make loader general, not only for Basler.
             camera = Basler(camera_id)
             self.loaded_cameras[camera_id] = camera
+            print("Sucesfully connected")
 
     def close_camera(self, camera_id):
         # Close camera and remove it from loaded list
@@ -64,3 +69,18 @@ class CameraManager(QObject):
 
     def get_camera_settings(self, i):
         return self.loaded_cameras[i].get_all_settings()
+
+    def start_image_acquisition_camera(self, index):
+        # Manage thread for the camera
+        if index not in self.threads:
+            thread = QThread()
+            self.threads[index] = thread
+            self.cam_worker[index] = CameraWorker(self.loaded_cameras[index])
+            self.cam_worker[index].moveToThread(thread)
+            thread.started.connect(self.cam_worker[index].run)
+            thread.start()
+            print("New threat started")
+
+    @Slot(int, object)
+    def frame_acquired_with_ID(self, idx, image):
+        return idx, image

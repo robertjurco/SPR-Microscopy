@@ -5,8 +5,6 @@ from source.model.hardware.camera import Camera
 
 
 class Basler(Camera):
-    frame_acquired = Signal(object)
-
     def __init__(self, index):
         # Mandatory functions:
         # - Opening a connection to the device
@@ -31,22 +29,6 @@ class Basler(Camera):
         """
         raise NotImplementedError()
 
-    def run(self):
-        print("starting camera thread")
-        self.running = True
-        self.cam.StartGrabbing(pylon.GrabStrategy_LatestImageOnly)
-        while self.running:
-            print("acquiring frame")
-            grab_result = self.cam.RetrieveResult(5000, pylon.TimeoutHandling_ThrowException)
-            if grab_result.GrabSucceeded():
-                image = grab_result.Array
-                self.frame_acquired.emit(image)
-            grab_result.Release()
-
-    def stop(self):
-        self.running = False
-        self.cam.StopGrabbing()
-
     def autoexposure(self):
         pass
 
@@ -58,7 +40,16 @@ class Basler(Camera):
         """
         raise NotImplementedError()
 
-
+    def acquire_image(self):
+        """Acquires an image from the camera."""
+        if self.cam.IsGrabbing():
+            grab_result = self.cam.RetrieveResult(5000, pylon.TimeoutHandling_ThrowException)
+            if grab_result.GrabSucceeded():
+                image = grab_result.Array
+                self.frame_acquired.emit(image)
+            grab_result.Release()
+        else:
+            self.cam.StartGrabbing()
 
     ################################################## SETTERS #########################################################
     def set_width(self, width):

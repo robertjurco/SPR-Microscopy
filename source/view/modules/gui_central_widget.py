@@ -17,13 +17,28 @@ class ImageDisplay(QWidget):
 
     def update_image(self):
         if self.current_image is not None:
-            height, width, channel = self.current_image.shape
-            bytes_per_line = channel * width
-            qimage = QImage(self.current_image.data, width, height, bytes_per_line, QImage.Format.Format_RGB888)
-            self.label.setPixmap(QPixmap.fromImage(qimage))
+            # Check if the image is grayscale
+            if len(self.current_image.shape) == 2:  # Grayscale image
+                height, width = self.current_image.shape
+                bytes_per_line = width  # One byte per pixel for grayscale
+                qimage = QImage(self.current_image.data, width, height, bytes_per_line, QImage.Format.Format_Grayscale8)
+                self.label.setPixmap(QPixmap.fromImage(qimage))
+            elif len(self.current_image.shape) == 3:  # Color image
+                height, width, channel = self.current_image.shape
+                bytes_per_line = channel * width
+
+                if channel == 3:  # Assuming RGB
+                    qimage = QImage(self.current_image.data, width, height, bytes_per_line, QImage.Format.Format_RGB888)
+                    self.label.setPixmap(QPixmap.fromImage(qimage))
+                else:
+                    print("Unsupported channel count.")
+                    return
+            else:
+                print("Invalid image shape:", self.current_image.shape)
 
     def set_image(self, image):
         self.current_image = image
+        self.update_image()
 
     def set_image_from_file(self, file_path):
         pixmap = QPixmap(file_path)
@@ -49,7 +64,7 @@ class CameraViewGUI(QWidget):
 
         # display
         self.image_display = ImageDisplay()
-        self.image_display.set_image_from_file('C:/Users/jurco/Desktop/images.png')
+        #self.image_display.set_image_from_file('C:/Users/jurco/Desktop/images.png')
 
         self.initUI()
 
@@ -78,8 +93,8 @@ class CentralWidgetGUI(QWidget):
         super().__init__()
 
         # remember opened tabs
-        self.camera_views = []
-        self.spectroscopy_views = []
+        self.camera_views = {}
+        self.spectroscopy_views = {}
 
         # class wise objects
         self.tabs = QTabWidget()
@@ -93,15 +108,14 @@ class CentralWidgetGUI(QWidget):
 
         self.setLayout(layout)
 
-
     def add_camera_tab(self, camera_index):
         # Create new camera view
-        new_camera_view = CameraViewGUI(camera_index = camera_index)
+        new_camera_view = CameraViewGUI(camera_index=camera_index)
 
         # Connect to its socket
         new_camera_view.close.connect(self.close_camera_view)
 
-        self.camera_views.append(new_camera_view)
+        self.camera_views[camera_index] = new_camera_view
         self.tabs.addTab(new_camera_view, f'Camera {camera_index}')
 
     def remove_current_tab(self):
@@ -111,22 +125,32 @@ class CentralWidgetGUI(QWidget):
             if widget is not None:
                 widget.deleteLater()
             self.tabs.removeTab(current_index)
-            if current_index < len(self.camera_views):
-                del self.camera_views[current_index]
-            else:
-                del self.spectroscopy_views[current_index - len(self.camera_views)]
+            if widget in self.camera_views.values():
+                for key, value in self.camera_views.items():
+                    if value == widget:
+                        del self.camera_views[key]
+                        break
+            elif widget in self.spectroscopy_views.values():
+                for key, value in self.spectroscopy_views.items():
+                    if value == widget:
+                        del self.spectroscopy_views[key]
+                        break
 
     @Slot(int)
     def close_camera_view(self, index):
         print("closing camera")
-        if 0 <= index < len(self.camera_views):
+        if index in self.camera_views:
             widget = self.camera_views.pop(index)
             if widget is not None:
                 widget.deleteLater()
 
     def close_spectroscopy_view(self, index):
         print("closing spectroscopy")
-        if 0 <= index < len(self.spectroscopy_views):
+        if index in self.spectroscopy_views:
             widget = self.spectroscopy_views.pop(index)
             if widget is not None:
                 widget.deleteLater()
+
+    @Slot(int, object)
+    def set_image(self, idx, image):
+        self.camera_views[idx].image_display.set_image(image)
