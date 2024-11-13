@@ -1,19 +1,22 @@
 from PySide6.QtCore import QTimer, Signal, Slot
-from PySide6.QtGui import QImage, QPixmap
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QTabWidget, QPushButton, QHBoxLayout, QMainWindow
+from PySide6.QtGui import QImage, QPixmap, Qt
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QTabWidget, QPushButton, QHBoxLayout, QMainWindow, \
+    QSizePolicy
 
 
 class ImageDisplay(QWidget):
     def __init__(self):
         super().__init__()
         self.label = QLabel(self)
+        self.label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         layout = QVBoxLayout()
         layout.addWidget(self.label)
         self.setLayout(layout)
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_image)
-        self.timer.start(1000 / 60)  # 60 FPS
+        self.timer.start(1000.0 / 60)  # 60 FPS
         self.current_image = None
+        self.qimage = None  # Reusable QImage instance
 
     def update_image(self):
         if self.current_image is not None:
@@ -35,6 +38,7 @@ class ImageDisplay(QWidget):
                     return
             else:
                 print("Invalid image shape:", self.current_image.shape)
+
 
     def set_image(self, image):
         self.current_image = image
@@ -115,8 +119,14 @@ class CentralWidgetGUI(QWidget):
         # Connect to its socket
         new_camera_view.close.connect(self.close_camera_view)
 
+        # Store the new camera view
         self.camera_views[camera_index] = new_camera_view
+
+        # Add the new tab
         self.tabs.addTab(new_camera_view, f'Camera {camera_index}')
+
+        # Switch to the new tab
+        self.tabs.setCurrentIndex(self.tabs.indexOf(new_camera_view))
 
     def remove_current_tab(self):
         current_index = self.tabs.currentIndex()

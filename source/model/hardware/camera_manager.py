@@ -55,9 +55,21 @@ class CameraManager(QObject):
     def close_camera(self, camera_id):
         # Close camera and remove it from loaded list
         if camera_id in self.loaded_cameras:
-            self.loaded_cameras[camera_id].stop()
+            # Stop the camera worker
+            if camera_id in self.cam_worker:
+                self.cam_worker[camera_id].stop()
+                self.cam_worker[camera_id].wait()  # Wait for the thread to finish
+                del self.cam_worker[camera_id]
+
+            # Close the camera
             self.loaded_cameras[camera_id].close()
             del self.loaded_cameras[camera_id]
+
+            # Stop and delete the thread
+            if camera_id in self.threads:
+                self.threads[camera_id].quit()  # Request the thread to quit
+                self.threads[camera_id].wait()  # Wait for the thread to finish
+                del self.threads[camera_id]
 
     def get_all_cameras_info(self):
         info = {
