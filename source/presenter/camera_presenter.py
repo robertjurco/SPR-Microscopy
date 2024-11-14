@@ -16,12 +16,12 @@ class CameraPresenter:
         # Search button
         self.view.right_bar_gui.camera_bar.search_button_pressed.connect(self.on_search_camera_button)
 
-        # On initialization detect cameras send reload gui
+        # On initialization detect camera_models send reload gui
         self.reload_cameras()
         self.reload_connections()
 
     def reload_cameras(self):
-        detected_cameras = self.model.camera_manager.detect_cameras()
+        detected_cameras = self.model.camera_manager.detect_devices()
         info = self.model.camera_manager.get_all_cameras_info()
         self.view.right_bar_gui.camera_bar.reload(detected_cameras, info)
 
@@ -43,7 +43,7 @@ class CameraPresenter:
     def handle_load_button_pressed(self, index):
         # Load camera with correct index
         # Hardware
-        self.model.camera_manager.load_camera(index)
+        self.model.camera_manager.load_devices(index)
         # GUI
         self.view.right_bar_gui.camera_bar.load_camera(index)
 
@@ -54,7 +54,7 @@ class CameraPresenter:
         self.view.central_widget_gui.add_camera_tab(index)
 
         # create an image acquisition link
-        camera = self.model.camera_manager.loaded_cameras[index]
+        camera = self.model.camera_manager.loaded_devices[index]
         camera.frame_acquired.connect(lambda image, idx=index: self.view.central_widget_gui.set_image(idx, image))
 
         # call create new thread in camera manager
@@ -62,7 +62,7 @@ class CameraPresenter:
 
     @Slot(int)
     def handle_settings_button_pressed(self, index):
-        settings = self.model.camera_manager.get_camera_settings(index)
+        settings = self.model.camera_manager.get_device_settings(index)
         self.view.right_bar_gui.settings_bar.fetch_camera_settings(index, settings)
 
     @Slot(int)
@@ -74,7 +74,7 @@ class CameraPresenter:
         # Close camera with correct index
 
         # Hardware
-        self.model.camera_manager.close_camera(index)
+        self.model.camera_manager.close_device(index)
 
         # GUI
         camera = self.view.right_bar_gui.camera_bar.scroll_area.camera_boxes[index]

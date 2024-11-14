@@ -38,7 +38,7 @@ class CameraWorker(QThread):
 
 
 class Camera(QObject):
-    """Abstract class for cameras."""
+    """Abstract class for camera_models."""
     frame_acquired = Signal(object)
 
     def __init__(self):

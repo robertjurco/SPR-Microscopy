@@ -1,7 +1,6 @@
-from PySide6.QtCore import QThread, Signal
 from pypylon import pylon
 
-from source.model.hardware.camera import Camera
+from source.model.hardware.camera.camera import Camera
 
 
 class Basler(Camera):
@@ -89,7 +88,7 @@ class Basler(Camera):
     ################################################## GETTERS #########################################################
     def get_name(self):
         """Gets the information about the camera."""
-        return self.cam.GetDeviceInfo().GetModelName()
+        return self.cam.GetDeviceInfo().GetFriendlyName()
 
     def get_width(self):
         """Gets the width of the camera's resolution."""

@@ -1,4 +1,4 @@
-from source.model.hardware.camera_manager import CameraManager
+from source.model.hardware.camera.camera_manager import CameraManager
 
 
 class Model:
