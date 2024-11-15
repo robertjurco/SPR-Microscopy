@@ -1,6 +1,8 @@
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout, QPushButton, QScrollArea, QSizePolicy
 
+from source.view.modules.gui_device import DeviceBox
+
 
 def create_button(text: str, slot) -> QPushButton:
     """
@@ -17,70 +19,25 @@ def create_button(text: str, slot) -> QPushButton:
     button.clicked.connect(slot)
     return button
 
-class CameraBox(QWidget):
+
+class CameraBox(DeviceBox):
     """
-    Class representing a camera box in a QWidget-based UI.
-
-    The CameraBox contains buttons for various actions related to a camera, such as loading, viewing, settings, reloading, and closing.
-
-    Signals:
-        load_button_pressed: Emitted when the "Load" button is pressed.
-        view_button_pressed: Emitted when the "View" button is pressed.
-        settings_button_pressed: Emitted when the "Settings" button is pressed.
-        reload_button_pressed: Emitted when the "Reload" button is pressed.
-        close_button_pressed: Emitted when the "Close" button is pressed.
+    Concrete implementation of DeviceBox for camera devices.
     """
-
-    # Define signals to connect to slots
-    load_button_pressed = Signal()
-    view_button_pressed = Signal()
-    settings_button_pressed = Signal()
-    reload_button_pressed = Signal()
-    close_button_pressed = Signal()
-
-    def __init__(self, name: str, status: str):
-        """
-        Initialize the CameraBox instance.
-
-        Parameters:
-            name (str): The name of the camera.
-            status (str): The status of the camera (e.g., "Loaded").
-        """
-        super().__init__()
-
-        # Initialize UI components
-        self.reload_button = None
-        self.settings_button = None
-        self.view_button = None
-        self.close_button = None
-        self.load_button = None
-
-        # Set object properties
-        self.setObjectName("CameraBox")
-        self.name = name
-        self.status = status
-
-        # Initialize the user interface
-        self.init_ui(name)
 
     def init_ui(self, name: str):
         """
-        Initialize the user interface for the CameraBox.
+        Initializes the user interface for the CameraBox.
 
         Parameters:
-            name (str): The name of the camera.
+        name (str): The name of the camera.
         """
         layout = QVBoxLayout()
-
-        # Create and add label for the camera name
         label = QLabel(name)
         label.setAlignment(Qt.AlignmentFlag.AlignLeft)
         layout.addWidget(label)
 
-        # Create a horizontal layout for the buttons
         button_layout = QHBoxLayout()
-
-        # Create and add buttons
         self.load_button = create_button('Load', self.on_load_button_pressed)
         self.view_button = create_button('View', self.on_view_button_pressed)
         self.settings_button = create_button('Settings', self.on_settings_button_pressed)
@@ -93,7 +50,6 @@ class CameraBox(QWidget):
         button_layout.addWidget(self.reload_button)
         button_layout.addWidget(self.close_button)
 
-        # Set button visibility based on the status
         if self.status == "Loaded":
             self.load_button.hide()
         else:
@@ -102,28 +58,45 @@ class CameraBox(QWidget):
             self.reload_button.hide()
             self.close_button.hide()
 
-        # Add the button layout to the main layout
         layout.addLayout(button_layout)
-
-        # Set the layout for the CameraBox
         self.setLayout(layout)
 
-    def on_load_button_pressed(self) -> None:
-        """Slot for handling the "Load" button press event."""
+    def loaded_GUI(self):
+        """
+        Updates the CameraBox GUI when the camera is loaded.
+        """
+        self.load_button.hide()
+        self.view_button.show()
+        self.settings_button.show()
+        self.reload_button.show()
+        self.close_button.show()
+
+    def on_load_button_pressed(self):
+        """
+        Event handler for the load button press. Emits the load_button_pressed signal.
+        """
         self.load_button_pressed.emit()
 
-    def on_view_button_pressed(self) -> None:
-        """Slot for handling the "View" button press event."""
+    def on_view_button_pressed(self):
+        """
+        Event handler for the view button press. Emits the view_button_pressed signal.
+        """
         self.view_button_pressed.emit()
 
-    def on_settings_button_pressed(self) -> None:
-        """Slot for handling the "Settings" button press event."""
+    def on_settings_button_pressed(self):
+        """
+        Event handler for the settings button press. Emits the settings_button_pressed signal.
+        """
         self.settings_button_pressed.emit()
 
-    def on_reload_button_pressed(self) -> None:
-        """Slot for handling the "Reload" button press event."""
+    def on_reload_button_pressed(self):
+        """
+        Event handler for the reload button press. Emits the reload_button_pressed signal.
+        """
         self.reload_button_pressed.emit()
 
-    def on_close_button_pressed(self) -> None:
-        """Slot for handling the "Close" button press event."""
+    def on_close_button_pressed(self):
+        """
+        Event handler for the close button press. Emits the close_button_pressed signal.
+        """
         self.close_button_pressed.emit()
