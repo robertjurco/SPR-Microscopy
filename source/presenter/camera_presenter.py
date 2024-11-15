@@ -27,7 +27,7 @@ class CameraPresenter:
 
     def reload_connections(self):
         # We need to connect on every reload
-        for i, camera_box in enumerate(self.view.right_bar_gui.camera_bar.scroll_area.camera_boxes):
+        for i, camera_box in enumerate(self.view.right_bar_gui.camera_bar.scroll_area.device_boxes):
             camera_box.load_button_pressed.connect(lambda index=i: self.handle_load_button_pressed(index))
             camera_box.view_button_pressed.connect(lambda index=i: self.handle_view_button_pressed(index))
             camera_box.settings_button_pressed.connect(lambda index=i: self.handle_settings_button_pressed(index))
@@ -44,8 +44,9 @@ class CameraPresenter:
         # Load camera with correct index
         # Hardware
         self.model.camera_manager.load_devices(index)
+
         # GUI
-        self.view.right_bar_gui.camera_bar.load_camera(index)
+        self.view.right_bar_gui.camera_bar.load_device(index)
 
 
     @Slot(int)
@@ -77,7 +78,7 @@ class CameraPresenter:
         self.model.camera_manager.close_device(index)
 
         # GUI
-        camera = self.view.right_bar_gui.camera_bar.scroll_area.camera_boxes[index]
+        camera = self.view.right_bar_gui.camera_bar.scroll_area.device_boxes[index]
 
         camera.status = "Not Loaded"
 

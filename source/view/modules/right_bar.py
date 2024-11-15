@@ -1,8 +1,8 @@
 from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QSplitter, QTabWidget
 from PySide6.QtCore import Qt
 
-from source.view.modules.gui_camera import GUICamera
-from source.view.modules.gui_camera_settings import CameraSettingsGUI
+from source.view.modules.gui_device import GUIDevice
+from source.view.modules.gui_devices.gui_camera_settings import CameraSettingsGUI
 
 
 class RightBarGUI(QWidget):
@@ -17,11 +17,11 @@ class RightBarGUI(QWidget):
 
         # Load devices panel
         self.settings_bar = CameraSettingsGUI(0)
-        self.camera_bar = GUICamera()
-        self.slm_bar = GUICamera()
-        self.shifts_bar = GUICamera()
-        self.piezo_bar = GUICamera()
-        self.filter_bar = GUICamera()
+        self.camera_bar = GUIDevice("camera")
+        self.slm_bar = GUIDevice("SLM")
+        self.shifts_bar = GUIDevice("motion_control")
+        self.piezo_bar = GUIDevice("piezo")
+        self.filter_bar = GUIDevice("filter")
 
         # Init UI
         self.init_ui()
@@ -63,9 +63,9 @@ class RightBarGUI(QWidget):
         tabs = QTabWidget()
         tabs.addTab(self.camera_bar, 'Camera')  # 0
         tabs.addTab(self.slm_bar, 'SLM')  # 1
-        tabs.addTab(self.shifts_bar, 'Shifts')  # 2
+        tabs.addTab(self.shifts_bar, 'Motion control')  # 2
         tabs.addTab(self.piezo_bar, 'Piezo')  # 3
-        tabs.addTab(self.filter_bar, 'filter')  # 4
+        tabs.addTab(self.filter_bar, 'Filter')  # 4
 
         layout.addWidget(tabs)
 
