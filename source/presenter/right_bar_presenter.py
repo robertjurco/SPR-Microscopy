@@ -59,6 +59,8 @@ class RightBarPresenter:
                 # create an image acquisition link
                 camera = self.model.device_manager.loaded_devices[serial]
                 camera.frame_acquired.connect(lambda image, idx=serial: self.view.central_widget_gui.set_image(idx, image))
+            case "Play":
+                pass
 
     def handle_motion_control_button_signal(self, button_name, serial, device_type):
         pass
