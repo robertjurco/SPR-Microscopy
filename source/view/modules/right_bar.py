@@ -108,18 +108,29 @@ class RightBarGUI(QWidget):
         return widget
 
     def test_reload(self, connected_devices):
-        # Clear existing widgets
-        for i in reversed(range(self.content_layout.count() - 1)):
+        existing_widgets = {}
+
+        # Store existing widgets in a dictionary by their serial
+        for i in range(self.content_layout.count() - 1):
             widget = self.content_layout.itemAt(i).widget()
             if widget is not None:
-                widget.setParent(None)  # Or use widget.deleteLater() if you need to free resources
+                existing_widgets[widget.serial] = widget
 
-        # Add new device boxes
+        # Process connected devices
         for serial, device in connected_devices.items():
-            box = create_device_box(serial, device)
-            if box:
-                self.content_layout.insertWidget(self.content_layout.count() - 1, box)  # Insert before the stretch
-                box.button_pressed.connect(self.handle_button_pressed)
+            if serial in existing_widgets:
+                # Device already exists, no need to create a new box
+                existing_widgets.pop(serial)
+            else:
+                # Create new device box and add it to layout
+                box = create_device_box(serial, device)
+                if box:
+                    self.content_layout.insertWidget(self.content_layout.count() - 1, box)  # Insert before the stretch
+                    box.button_pressed.connect(self.handle_button_pressed)
+
+        # Handle disconnected devices
+        for serial, widget in existing_widgets.items():
+            widget.disconnected()  # Or use widget.deleteLater() if you need to free resources
 
     def on_search_button_clicked(self) -> None:
         """

@@ -37,6 +37,9 @@ class DeviceBox(QWidget):
 
         return button
 
+    def disconnected(self):
+        print(f"Device {self.serial} is disconnected")
+
     def init_ui(self):
         """
         Initializes the user interface for the device box. Must be implemented by subclasses.

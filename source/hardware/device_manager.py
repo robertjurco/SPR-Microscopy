@@ -26,24 +26,27 @@ class DeviceManager:
         # Dictionary to keep track of device threads
         self.device_threads: Dict[str, threading.Thread] = {}
 
-
-
     def auto_detect_devices(self):
         try:
+            # Temporary set to track currently connected devices
+            current_device_serials = set()
+
             # Detect cameras
             camera_devices = pylon.TlFactory.GetInstance().EnumerateDevices()
             for device in camera_devices:
                 serial_number = device.GetSerialNumber()
+                current_device_serials.add(serial_number)
                 if serial_number not in self.connected_devices:
                     self.connected_devices[serial_number] = {
                         'name': 'Basler ' + device.GetModelName(),
                         'type': 'camera',
                         'status': 'connected'
                     }
-            return len(self.connected_devices)
+
             # Detect motion control devices
             motion_devices = Thorlabs.list_kinesis_devices()
             for serial_number, description in motion_devices:
+                current_device_serials.add(serial_number)
                 if serial_number not in self.connected_devices:
                     self.connected_devices[serial_number] = {
                         'name': description,
@@ -55,6 +58,7 @@ class DeviceManager:
             slm_devices = ThorlabsExulus.EXULUSListDevices()
             for device in slm_devices:
                 serial_number = device[0]
+                current_device_serials.add(serial_number)
                 if serial_number not in self.connected_devices:
                     self.connected_devices[serial_number] = {
                         'name': device[1],
@@ -62,11 +66,12 @@ class DeviceManager:
                         'status': 'connected'
                     }
 
-            # Detect NKT devices
-            print(pll.list_backend_resources("serial"))
-            print(pll.list_backend_resources("visa"))
-            print(self.connected_devices)
+            # Remove devices from dict if not connected
+            disconnected_devices = [serial for serial in self.connected_devices if serial not in current_device_serials]
+            for serial in disconnected_devices:
+                del self.connected_devices[serial]
 
+            print(self.connected_devices)
             return len(self.connected_devices)
         except Exception as e:
             print(f"Error during device detection: {e}")
