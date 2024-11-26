@@ -1,4 +1,4 @@
-from source.model.hardware.motion_control.motion_control import MotionControl
+from source.model.motion_control.motion_control import MotionControl
 
 
 class KinesisSolenoid(MotionControl):

@@ -3,9 +3,10 @@ from PyQt5.QtCore import QObject
 
 class MotionControl(QObject):
 
-    def __init__(self):
+    def __init__(self, serial):
         super().__init__()
         self.running = False  # Is device running?
+        print(serial)
 
     def close(self):
         """Closes the .... connection and deletes related objects.

@@ -3,12 +3,12 @@ This class will manage the connected camera_models and provide methods to load a
 It emits signals when camera_models are connected or disconnected.
 """
 
-from PySide6.QtCore import QObject, Signal, QThread, Slot
+from PySide6.QtCore import Signal, QThread, Slot
 from pypylon import pylon
 
-from source.model.hardware.camera.camera import CameraWorker
-from source.model.hardware.camera.camera_models.basler import Basler
-from source.model.hardware.device_manager import DeviceManager
+from source.model.camera.camera import CameraWorker
+from source.model.camera.camera_models.basler import Basler
+from source.model.device_manager import DeviceManager
 
 
 class CameraManager(DeviceManager):
@@ -33,6 +33,8 @@ class CameraManager(DeviceManager):
         super().__init__()
         self.threads = {}
         self.cam_workers = {}
+        self.connected_devices = {}
+        self.loaded_devices = {}
 
     def detect_devices(self):
         """

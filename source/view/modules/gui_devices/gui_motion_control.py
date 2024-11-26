@@ -8,7 +8,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout, QPushBu
 from source.view.modules.gui_device import DeviceBox
 
 
-class CameraBox(DeviceBox):
+class MotionControlBox(DeviceBox):
 
     def __init__(self, serial: int, name: str, type: str, status: str):
         super().__init__(serial, name, type, status)
@@ -26,7 +26,7 @@ class CameraBox(DeviceBox):
 
         # Add the device image
         image_label = QLabel(self)
-        pixmap = QPixmap('view/icons/devices/basler_camera_600by600.jpg')
+        pixmap = QPixmap('view/icons/devices/KCube_780by780.jpg')
         pixmap = pixmap.scaled(90, 90, Qt.AspectRatioMode.KeepAspectRatio)  # Adjust the size as needed
         image_label.setPixmap(pixmap)
         image_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
@@ -45,7 +45,7 @@ class CameraBox(DeviceBox):
         name_serial_layout = QHBoxLayout()
 
         # Add the device name label
-        name_label = QLabel(f"<b>Camera:</b> {self.name}", self)
+        name_label = QLabel(f"<b>Motion control:</b> {self.name}", self)
         name_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
         name_serial_layout.addWidget(name_label)
 

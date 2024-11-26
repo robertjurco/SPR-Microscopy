@@ -1,8 +1,8 @@
-from PySide6.QtCore import Signal, QThread
+from PySide6.QtCore import Signal
 from pylablib.devices import Thorlabs
 
-from source.model.hardware.device_manager import DeviceManager
-from source.model.hardware.motion_control.motion_control import MotionControl
+from source.model.device_manager import DeviceManager
+from source.model.motion_control.motion_control import MotionControl
 
 
 class MotionControlManager(DeviceManager):
@@ -25,6 +25,9 @@ class MotionControlManager(DeviceManager):
         self.threads = {}
         self.device_workers = {}
 
+        self.connected_devices = {}
+        self.loaded_devices = {}
+
     def detect_devices(self):
         """
         Detect all connected camera devices and add new devices to the connected list.
@@ -35,8 +38,8 @@ class MotionControlManager(DeviceManager):
 
         for device in devices:
             serial_number, device_type = device  # unpack the tuple
-            if serial_number not in [d['serial'] for d in self.connected_devices]:
-                self.connected_devices.append({'serial': serial_number, 'type': device_type})
+            if serial_number not in self.connected_devices:
+                self.connected_devices[serial_number] = device
 
         return len(devices)
 
@@ -44,18 +47,18 @@ class MotionControlManager(DeviceManager):
         """
             Load a specific camera device and add it to the loaded list.
             Args:
-                device_id (int): The ID of the camera device to be loaded.
+                serial_number (int): The ID of the camera device to be loaded.
             Returns:
                 bool: True if the device was successfully loaded, False otherwise.
             """
-        if serial_number not in [d['serial'] for d in self.loaded_devices]:
+        if serial_number in self.connected_devices and serial_number not in self.loaded_devices:
             try:
                 device = MotionControl(serial_number)
-                self.loaded_devices[device_id] = device
-                print(f"Successfully connected to device {device_id}.")  # Prefer using logging or emit a signal
+                self.loaded_devices[serial_number] = device
+                print(f"Successfully connected to device {serial_number}.")  # Prefer using logging or emit a signal
                 return True
             except Exception as e:
-                print(f"Failed to connect to device {device_id}: {e}")  # Prefer using logging or emit a signal
+                print(f"Failed to connect to device {serial_number}: {e}")  # Prefer using logging or emit a signal
                 return False
         return False
 
@@ -84,7 +87,7 @@ class MotionControlManager(DeviceManager):
                 self.threads[device_id].wait()  # Wait for the thread to finish
                 del self.threads[device_id]
 
-    def get_all_cameras_info(self):
+    def get_all_devices_info(self):
         info = {
             "connected": list(self.connected_devices.keys()),
             "loaded": list(self.loaded_devices.keys()),

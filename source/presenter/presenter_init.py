@@ -1,6 +1,6 @@
 from PySide6.QtCore import QThreadPool
 
-from source.presenter.camera_presenter import CameraPresenter
+from source.presenter.right_bar_presenter import RightBarPresenter
 
 
 class Presenter:
@@ -9,4 +9,4 @@ class Presenter:
         self.view = view
         self.threadpool = QThreadPool()
 
-        self.cameraPresenter = CameraPresenter(model, view)
+        self.right_bar_presenter = RightBarPresenter(model, view)

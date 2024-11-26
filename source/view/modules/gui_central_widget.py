@@ -51,16 +51,16 @@ class ImageDisplay(QWidget):
 class CameraViewGUI(QWidget):
     close = Signal(int)
 
-    def __init__(self, camera_index):
+    def __init__(self, serial):
         super().__init__()
 
         # which camera are we viewing
         self.detached_window = None
-        self.camera_index = camera_index
+        self.serial = serial
 
         # Close button
         self.close_button = QPushButton('Close', self)
-        self.close_button.clicked.connect(lambda: self.close.emit(camera_index))
+        self.close_button.clicked.connect(lambda: self.close.emit(serial))
 
         # Detach button
         self.detach_button = QPushButton('Detach', self)
@@ -112,18 +112,18 @@ class CentralWidgetGUI(QWidget):
 
         self.setLayout(layout)
 
-    def add_camera_tab(self, camera_index):
+    def add_camera_tab(self, serial):
         # Create new camera view
-        new_camera_view = CameraViewGUI(camera_index=camera_index)
+        new_camera_view = CameraViewGUI(serial=serial)
 
         # Connect to its socket
         new_camera_view.close.connect(self.close_camera_view)
 
         # Store the new camera view
-        self.camera_views[camera_index] = new_camera_view
+        self.camera_views[serial] = new_camera_view
 
         # Add the new tab
-        self.tabs.addTab(new_camera_view, f'Camera {camera_index}')
+        self.tabs.addTab(new_camera_view, f'Camera {serial}')
 
         # Switch to the new tab
         self.tabs.setCurrentIndex(self.tabs.indexOf(new_camera_view))
@@ -147,10 +147,10 @@ class CentralWidgetGUI(QWidget):
                         break
 
     @Slot(int)
-    def close_camera_view(self, index):
+    def close_camera_view(self, serial):
         print("closing camera")
-        if index in self.camera_views:
-            widget = self.camera_views.pop(index)
+        if serial in self.camera_views:
+            widget = self.camera_views.pop(serial)
             if widget is not None:
                 widget.deleteLater()
 

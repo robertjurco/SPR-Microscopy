@@ -1,7 +1,5 @@
 import time
-import traceback
-from PySide6.QtCore import QRunnable, QObject, Signal, QThread
-from PySide6.QtGui import QPixmap
+from PySide6.QtCore import QObject, Signal, QThread
 
 
 class CameraWorker(QThread):
@@ -43,7 +41,6 @@ class Camera(QObject):
 
     def __init__(self):
         super().__init__()
-        self.running = False  # Is camera running?
 
     def close(self):
         """Closes the camera connection and deletes related objects.
@@ -88,6 +85,10 @@ class Camera(QObject):
             If the method is not implemented.
         """
         raise NotImplementedError()
+
+
+    def handle_message(self, massage):
+        print("Cannot handle massage: " + str(massage))
 
     ################################################## SETTERS #########################################################
 

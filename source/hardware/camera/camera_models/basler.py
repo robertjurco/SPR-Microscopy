@@ -1,17 +1,31 @@
 from pypylon import pylon
 
-from source.model.hardware.camera.camera import Camera
+from source.hardware.camera.camera import Camera
 
 
 class Basler(Camera):
-    def __init__(self, index):
-        # Mandatory functions:
-        # - Opening a connection to the device
+    def __init__(self, serial):
+        # Initialize the transport layer factory
         tl_factory = pylon.TlFactory.GetInstance()
+        # Enumerate all devices connected to the machine
         devices = tl_factory.EnumerateDevices()
-        # selection of the camera with the specific id
-        self.cam = pylon.InstantCamera(pylon.TlFactory.GetInstance().CreateDevice(devices[index]))
-        self.cam.Open()
+
+        # Initialize the camera variable
+        self.cam = None
+
+        # Search for the camera with the matching serial number
+        for device in devices:
+            # Retrieve the device info
+            device_serial = device.GetSerialNumber()
+            if device_serial == serial:
+                # Create and open the camera with the specified serial number
+                self.cam = pylon.InstantCamera(tl_factory.CreateDevice(device))
+                self.cam.Open()
+                break
+
+        # Raise an exception if no camera with the specified serial number is found
+        if self.cam is None:
+            raise ValueError(f"No camera with serial number {serial} found")
 
         # Finally, use the superclass constructor to initialize other required variables.
         # - Gathering parameters such a width, height, and bitdepth.
@@ -49,6 +63,9 @@ class Basler(Camera):
             grab_result.Release()
         else:
             self.cam.StartGrabbing()
+
+    def handle_message(self, massage):
+        print("Cannot handle massage: " + str(massage))
 
     ################################################## SETTERS #########################################################
     def set_width(self, width):

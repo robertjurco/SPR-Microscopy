@@ -3,7 +3,7 @@ import sys
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QApplication
 
-from model.model_init import Model
+from hardware.model_init import Model
 from presenter.presenter_init import Presenter
 from view.view_init import View
 
