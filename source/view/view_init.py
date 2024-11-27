@@ -1,6 +1,6 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QMainWindow, QToolBar, QStatusBar, QWidget, QHBoxLayout, QSplitter
+from PySide6.QtWidgets import QMainWindow, QToolBar, QStatusBar, QWidget, QHBoxLayout, QSplitter, QMenu
 import source.tools as tools
 from source.view.modules.gui_central_widget import CentralWidgetGUI
 from source.view.modules.right_bar import RightBarGUI
@@ -10,6 +10,7 @@ class View(QMainWindow):
     """
     A class used to represent the View.
     """
+    open_tab_signal = Signal(str)
 
     def __init__(self):
         """
@@ -44,14 +45,37 @@ class View(QMainWindow):
         toolbar.setStyleSheet(f"background-color: {color};")
         self.addToolBar(toolbar)
 
+        # Adding File info to the toolbar
         self.tool_file_info = QAction("File info", self)
         self.tool_file_info.setStatusTip("Info about loaded file.")
         toolbar.addAction(self.tool_file_info)
         self.tool_file_info.setDisabled(True)
 
+        # Adding Open menu
+        open_menu = QMenu("Open", self)
+
+        self.add_actions(open_menu, "Imaging", "Imaging")
+        self.add_actions(open_menu, "Spectroscopy", "Spectroscopy")
+        self.add_actions(open_menu, "Camera FPS meter", "Camera_FPS_meter")
+        self.add_actions(open_menu, "SPR Microscopy", "SPR_Microscopy")
+
+        # Adding the Open menu to the toolbar
+        open_menu_button = QAction("Open", self)
+        open_menu_button.setMenu(open_menu)
+        toolbar.addAction(open_menu_button)
+
+        # Adding Help to the toolbar
         self.tool_help = QAction("Help", self)
         self.tool_help.setStatusTip("[help]")
         toolbar.addAction(self.tool_help)
+
+    def add_actions(self, menu, action_name, message_name):
+        action = QAction(action_name, self)
+        action.triggered.connect(lambda checked, m=message_name: self.emit_option_selected(m))
+        menu.addAction(action)
+
+    def emit_option_selected(self, message):
+        self.open_tab_signal.emit(message)
 
     def setup_layout(self):
         """

@@ -8,6 +8,8 @@ class RightBarPresenter:
         self.view = view
 
         # Connect signals to slots
+        # Open tab buttons
+        self.view.open_tab_signal.connect(self.add_tab)
         # Search button
         self.view.right_bar_gui.search_button_clicked.connect(self.on_search_button)
         # Load button
@@ -17,7 +19,7 @@ class RightBarPresenter:
 
 
         # On initialization detect camera_models send reload gui
-        #self.reload_devices()
+        self.reload_devices()
 
     def reload_devices(self):
         self.model.device_manager.auto_detect_devices()
@@ -30,6 +32,11 @@ class RightBarPresenter:
 
     def on_load_button(self):
         pass
+
+
+    @Slot(str)
+    def add_tab(self, tab_type):
+        self.view.central_widget_gui.add_tab(tab_type)
 
     @Slot(str, str, str)
     def handle_button_signal(self, button_name, serial, device_type):

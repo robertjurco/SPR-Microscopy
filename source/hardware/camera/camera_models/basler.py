@@ -58,8 +58,7 @@ class Basler(Camera):
         if self.cam.IsGrabbing():
             grab_result = self.cam.RetrieveResult(5000, pylon.TimeoutHandling_ThrowException)
             if grab_result.GrabSucceeded():
-                image = grab_result.Array
-                self.frame_acquired.emit(image)
+                return grab_result.Array
             grab_result.Release()
         else:
             self.cam.StartGrabbing()

@@ -14,11 +14,25 @@ import source.hardware.slms.EXULUS_COMMAND_LIB as ThorlabsExulus
 from source.hardware.camera.camera import CameraWorker
 from source.hardware.camera.camera_models.basler import Basler
 
+class ThreadWorker(QThread):
+
+    def __init__(self, device):
+        super().__init__()
+        self.device = device
+        self.running = False
+
+    def run(self):
+        self.running = True
+        while self.running:
+            self.device.step()
+
+    def stop(self):
+        self.running = False
 
 class DeviceManager:
     def __init__(self):
         self.threads: Dict[str, QThread] = {}
-        self.cam_workers: Dict[str, CameraWorker] = {}
+        self.thread_workers: Dict[str, ThreadWorker] = {}
         # Dictionary to store connected devices with serial number as key
         self.connected_devices: Dict[str, Dict[str, Any]] = {}
         # Dictionary to store loaded devices
@@ -130,9 +144,9 @@ class DeviceManager:
                 if serial not in self.threads:
                     thread = QThread()
                     self.threads[serial] = thread
-                    self.cam_workers[serial] = CameraWorker(self.loaded_devices[serial])
-                    self.cam_workers[serial].moveToThread(thread)
-                    thread.started.connect(self.cam_workers[serial].run)
+                    self.thread_workers[serial] = ThreadWorker(self.loaded_devices[serial])
+                    self.thread_workers[serial].moveToThread(thread)
+                    thread.started.connect(self.thread_workers[serial].run)
                     thread.start()
                     print("New threat started")
 

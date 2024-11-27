@@ -1,39 +1,7 @@
 import time
+
+import numpy as np
 from PySide6.QtCore import QObject, Signal, QThread
-
-
-class CameraWorker(QThread):
-
-    def __init__(self, camera):
-        super().__init__()
-        self.camera = camera
-        self.running = False
-
-    def run(self):
-        """Starts the camera capture thread.
-
-        Raises
-        ------
-        NotImplementedError
-            If the method is not implemented.
-        """
-        self.running = True
-        while self.running:
-            start_time = time.time()
-            self.camera.acquire_image()
-            time.sleep(1.0 / self.camera.get_frame_rate())
-
-
-    def stop(self):
-        """Stops the camera capture thread.
-
-        Raises
-        ------
-        NotImplementedError
-            If the method is not implemented.
-        """
-        self.running = False
-
 
 class Camera(QObject):
     """Abstract class for camera_models."""
@@ -41,6 +9,7 @@ class Camera(QObject):
 
     def __init__(self):
         super().__init__()
+        self.average = 100
 
     def close(self):
         """Closes the camera connection and deletes related objects.
@@ -85,6 +54,20 @@ class Camera(QObject):
             If the method is not implemented.
         """
         raise NotImplementedError()
+
+    def step(self):
+        image = self.acquire_image()
+
+        image_array = np.array(image)
+        avg_signal = np.mean(image_array)
+
+        time.sleep(1.0 / self.get_frame_rate())
+
+    def set_average(self, average):
+        self.average = average
+
+    def get_average(self):
+        return self.average
 
 
     def handle_message(self, massage):
