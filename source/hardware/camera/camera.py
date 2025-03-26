@@ -1,11 +1,11 @@
 import time
 
 import numpy as np
-from PySide6.QtCore import QObject, Signal, QThread
+from PySide6.QtGui import QImage
+from PySide6.QtCore import QObject, Signal, QThread, QRunnable, QThreadPool
 
 class Camera(QObject):
     """Abstract class for camera_models."""
-    frame_acquired = Signal(object)
 
     def __init__(self):
         super().__init__()
@@ -69,9 +69,6 @@ class Camera(QObject):
     def get_average(self):
         return self.average
 
-
-    def handle_message(self, massage):
-        print("Cannot handle massage: " + str(massage))
 
     ################################################## SETTERS #########################################################
 

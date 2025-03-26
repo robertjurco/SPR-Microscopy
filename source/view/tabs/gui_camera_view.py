@@ -69,7 +69,8 @@ class CameraViewGUI(QWidget):
         self.image_display = ImageDisplay()
         #self.image_display.set_image_from_file('C:/Users/jurco/Desktop/images.png')
 
-        self.initUI()
+        # Initialize UI
+        self.initUI() # Settings components
 
     def initUI(self):
         layout = QVBoxLayout()

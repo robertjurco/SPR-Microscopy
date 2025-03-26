@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QLabel
 
-from source.view.modules.gui_tab import TabGUI
+from source.view_OLD.modules.gui_tab import TabGUI
 
 
 class CameraSpeedGUI(TabGUI):

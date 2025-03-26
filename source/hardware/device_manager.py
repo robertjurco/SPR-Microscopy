@@ -11,7 +11,6 @@ from pylablib.devices import Thorlabs, NKT
 from scipy.sparse.csgraph import connected_components
 
 import source.hardware.slms.EXULUS_COMMAND_LIB as ThorlabsExulus
-from source.hardware.camera.camera import CameraWorker
 from source.hardware.camera.camera_models.basler import Basler
 
 class ThreadWorker(QThread):
@@ -100,83 +99,35 @@ class DeviceManager:
         """
         return self.connected_devices
 
-    def handle_button_signal(self, message: str, serial: str, device_type: str) -> None:
-        """
-        Handles button signals received with appropriate actions.
-
-        Args:
-            message (str): The message to process.
-            serial (str): Serial number of the device.
-            device_type (str): Type of the device.
-        """
-        if not self.is_device_connected(serial):
-            print(f"Device with serial {serial} is not connected.")
-            return
-
-        if message == "Load":
-            if self.is_device_loaded(serial):
-                print(f"Device with serial {serial} is already loaded.")
-                return
-            self.load_device(serial, device_type)
-        else:
-            if not self.is_device_loaded(serial):
-                print(f"Device with serial {serial} is not loaded.")
-                return
-
-            self.loaded_devices[serial].handle_message(message)
-
-            match device_type:
-                case "camera":
-                    self.handle_camera_message(serial, message)
-                case "motion_control":
-                    self.handle_motion_message(serial, message)
-                case "slm":
-                    self.handle_slm_message(serial, message)
-
-                # If an exact match is not confirmed, this last case will be used if provided
-                case _:
-                    print("Something's wrong with the message handling.")
-
-    def handle_camera_message(self, serial, message):
-        match message:
-            case ("View" | "Play"):
-                # Manage thread for the camera
-                if serial not in self.threads:
-                    thread = QThread()
-                    self.threads[serial] = thread
-                    self.thread_workers[serial] = ThreadWorker(self.loaded_devices[serial])
-                    self.thread_workers[serial].moveToThread(thread)
-                    thread.started.connect(self.thread_workers[serial].run)
-                    thread.start()
-                    print("New threat started")
-
-
-    def handle_motion_message(self, serial, message):
-        pass
-
-    def handle_slm_message(self, serial, message):
-        pass
-
-    def load_device(self, serial: str, device_type: str) -> None:
+    def load_device(self, serial: str) -> int:
         """
         Loads a device based on its type.
 
         Args:
             serial (str): Serial number of the device.
             device_type (str): Type of the device.
+
+        Returns:
+            int: 1 if device loaded successfully, 0 otherwise.
         """
+        device_type = self.list_connected_devices()[serial]['type']
+
         try:
             if device_type == "camera":
                 print(f"Attempting to load device with serial {serial} as a camera.")
                 self.loaded_devices[serial] = Basler(serial)
                 if self.loaded_devices[serial] is not None:
                     print(f"Device with serial {serial} loaded successfully.")
+                    return 1  # Return 1 on success
                 else:
                     print(f"Device with serial {serial} is not loaded.")
+                    return 0  # Return 0 on failure
             else:
                 print(f"Unsupported device type: {device_type}.")
+                return 0  # Return 0 for unsupported device types
         except Exception as e:
             print(f"Failed to load device with serial {serial}. Error: {e}")
+            return 0  # Return 0 on exception
 
     def close_device(self, serial: str) -> bool:
         """
@@ -215,16 +166,12 @@ class DeviceManager:
         """
         return serial in self.loaded_devices
 
-    def send_message_to_device(self, serial: str, message: str) -> bool:
-        """
-        Placeholder method to send a message to a device.
+    def get_device_settings(self, serial: str) -> dict:
+        if serial in self.loaded_devices:
+            return self.loaded_devices[serial].get_all_settings()
+        else:
+            return "Device not loaded"
 
-        Args:
-            serial (str): Serial number of the device.
-            message (str): Message to be sent.
 
-        Returns:
-            bool: Success status.
-        """
-        # Implement actual message sending logic here
-        return False
+    def set_device_settings(self, serial: str, settings: dict):
+        self.loaded_devices[serial].set_all_settings(settings)

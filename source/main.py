@@ -4,8 +4,8 @@ from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QApplication
 
 from hardware.model_init import Model
-from presenter.presenter_init import Presenter
-from view.view_init import View
+from controller.controller import Controller
+from view.view_init import StartUpWindow
 
 
 def __excepthook(exc_type, exc_value, exc_tb):
@@ -36,11 +36,11 @@ if __name__ == '__main__':
     app.setStyleSheet(style_sheet)
 
 
-    # The Model-View-Presenter (MVP) architecture separates an application into three components:
+    # The Model-View-Controller (MVP) architecture separates an application into three components:
     # the Model, which handles data and business logic; the View, which manages the user interface and displays data;
-    # and the Presenter, which acts as an intermediary, processing user input, updating the Model, and refreshing the View.
+    # and the Controller, which acts as an intermediary, processing user input, updating the Model, and refreshing the View.
     # This separation of concerns makes the codebase easier to manage, test, and maintain,
-    # as each component can be developed independently. The Presenter ensures that the View remains passive and
+    # as each component can be developed independently. The Controller ensures that the View remains passive and
     # focused on UI tasks, while the Model remains unaware of the UI, leading to a more modular and maintainable
     # application structure.
 
@@ -50,13 +50,13 @@ if __name__ == '__main__':
 
     # View: Manages the GUI components.
     # .show() is a property of QWidget: View extends QMainWindow, QMainWindow extends QWidget.
-    view = View()
+    view = StartUpWindow()
     view.show()
     print("View initialized")
 
-    # Presenter: Handles the interaction between the Model and the View,
-    # including starting the background task and updating the view when the task is complete.
-    presenter = Presenter(model, view)
+    # Controller: Handles the interaction between the Model and the View,
+    # including starting the background task and updating the view_OLD when the task is complete.
+    controller = Controller(model, view)
 
     # Starts the application’s event loop, which waits for user interactions and updates the GUI accordingly.
     # The application will keep running until app.quit() is called or the main window is closed.

@@ -1,6 +1,6 @@
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QComboBox, QPushButton, QLabel)
-from source.view.modules.gui_tab import TabGUI
-from source.view.modules.tabs.misc import PlotWidget
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QSplitter, QComboBox, QPushButton, QLabel)
+from source.view_OLD.modules.gui_tab import TabGUI
+from source.view.tabs.misc import PlotWidget
 from PySide6.QtCore import Qt
 
 class ImaginingGUI(TabGUI):

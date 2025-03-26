@@ -56,7 +56,7 @@ class Basler(Camera):
     def acquire_image(self):
         """Acquires an image from the camera."""
         if self.cam.IsGrabbing():
-            grab_result = self.cam.RetrieveResult(5000, pylon.TimeoutHandling_ThrowException)
+            grab_result = self.cam.RetrieveResult(5000, pylon.TimeoutHandling_ThrowException) # 0 or 5000 ???
             if grab_result.GrabSucceeded():
                 return grab_result.Array
             grab_result.Release()
