@@ -538,7 +538,7 @@ class Camera(QObject):
             A dictionary containing all the settings to be applied to the camera.
         """
         if 'width' in settings:
-            width = settings['width']
+            width = settings['width']['value']
             min_width, max_width = self.get_width_min_max()
             if min_width <= width <= max_width:
                 self.set_width(width)
@@ -546,7 +546,7 @@ class Camera(QObject):
                 raise ValueError(f"Width {width} is out of range ({min_width}, {max_width})")
 
         if 'height' in settings:
-            height = settings['height']
+            height = settings['height']['value']
             min_height, max_height = self.get_height_min_max()
             if min_height <= height <= max_height:
                 self.set_height(height)
@@ -557,7 +557,7 @@ class Camera(QObject):
             self.set_bitdepth(settings['bitdepth'])
 
         if 'exposure' in settings:
-            exposure = settings['exposure']
+            exposure = settings['exposure']['value']
             min_exposure, max_exposure = self.get_exposure_min_max()
             if min_exposure <= exposure <= max_exposure:
                 self.set_exposure(exposure)
@@ -565,7 +565,7 @@ class Camera(QObject):
                 raise ValueError(f"Exposure {exposure} is out of range ({min_exposure}, {max_exposure})")
 
         if 'gain' in settings:
-            gain = settings['gain']
+            gain = settings['gain']['value']
             min_gain, max_gain = self.get_gain_min_max()
             if min_gain <= gain <= max_gain:
                 self.set_gain(gain)
@@ -573,7 +573,7 @@ class Camera(QObject):
                 raise ValueError(f"Gain {gain} is out of range ({min_gain}, {max_gain})")
 
         if 'frame_rate' in settings:
-            frame_rate = settings['frame_rate']
+            frame_rate = settings['frame_rate']['value']
             min_frame_rate, max_frame_rate = self.get_frame_rate_min_max()
             if min_frame_rate <= frame_rate <= max_frame_rate:
                 self.set_frame_rate(frame_rate)

@@ -81,7 +81,8 @@ class Basler(Camera):
 
     def set_exposure(self, exposure_s):
         """Sets the integration time in seconds."""
-        self.cam.ExposureTime.Value = exposure_s * 1e6  # Convert seconds to microseconds
+        self.cam.ExposureTime.Value = exposure_s  # Convert seconds to microseconds if needed
+        print("set expoasure to: " + str(exposure_s))
 
     def set_gain(self, gain):
         """Sets the camera gain."""

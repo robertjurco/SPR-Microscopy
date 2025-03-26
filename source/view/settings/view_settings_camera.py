@@ -165,6 +165,7 @@ class SettingsWidget(QWidget):
         :return: Tuple containing the label widget and spinbox widget.
         """
         label_widget = QLabel(label)
+        label_range_widget = QLabel(str(default_value))
         spinbox = QSpinBox()
         spinbox.setRange(1, 1000)
         spinbox.setValue(default_value)
