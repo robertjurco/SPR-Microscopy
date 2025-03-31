@@ -2,7 +2,7 @@ from PySide6.QtCore import Signal
 from PySide6.QtGui import QImage
 
 from source.controller.settings.controller_settings_camera import CameraSettingsController
-from source.view.settings.view_settings_camera import ViewCameraSettings
+from source.view.tabs.view_imaging import ImagingView
 
 
 class StartUpWindowController:
@@ -20,7 +20,7 @@ class StartUpWindowController:
         # Connect signals to slots
         self.view.device_activate_click.connect(self.on_device_activated)
         self.view.on_settings_clicked.connect(self.open_settings_window)
-
+        self.view.new_project.connect(self.new_project)
 
         # On initialization detect camera_models send reload gui
         self.reload_devices()
@@ -45,3 +45,15 @@ class StartUpWindowController:
     def open_settings_window(self, serial):
         # Create a runnable instance for CameraSettingsController
         CameraSettingsController(self.model, self.view, serial)
+
+    def new_project(self, project_type: str):
+        match project_type:
+            case "Imaging":
+                self.imaging_view = ImagingView()
+                self.imaging_view.show()
+            case "Spectroscopy":
+                pass
+            case "Camera FPS meter":
+                pass
+            case "SLM":
+                pass

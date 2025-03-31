@@ -12,6 +12,7 @@ class Basler(Camera):
 
         # Initialize the camera variable
         self.cam = None
+        self.serial = serial
 
         # Search for the camera with the matching serial number
         for device in devices:
@@ -30,6 +31,9 @@ class Basler(Camera):
         # Finally, use the superclass constructor to initialize other required variables.
         # - Gathering parameters such a width, height, and bitdepth.
         super().__init__()
+
+        # Disable autoexposure
+        self.cam.ExposureAuto.SetValue("Off")
 
     def close(self):
         """See :meth:`.Camera.close`."""
@@ -56,51 +60,61 @@ class Basler(Camera):
     def acquire_image(self):
         """Acquires an image from the camera."""
         if self.cam.IsGrabbing():
-            grab_result = self.cam.RetrieveResult(5000, pylon.TimeoutHandling_ThrowException) # 0 or 5000 ???
+            grab_result = self.cam.RetrieveResult(1000, pylon.TimeoutHandling_ThrowException) # 0 or 5000 ???
             if grab_result.GrabSucceeded():
                 return grab_result.Array
             grab_result.Release()
         else:
             self.cam.StartGrabbing()
 
+    def pause(self):
+        self.cam.StopGrabbing()
+
     def handle_message(self, massage):
         print("Cannot handle massage: " + str(massage))
 
     ################################################## SETTERS #########################################################
-    def set_width(self, width):
+    def set_width(self, width: int):
         """Sets the camera resolution width."""
-        self.cam.Width.Value = width
+        print(width)
+        self.cam.Width.SetValue(width)
 
-    def set_height(self, height):
+
+    def set_height(self, height: int):
         """Sets the camera resolution height."""
-        self.cam.Height.Value = height
+        self.cam.Height.SetValue(height)
 
-    def set_bitdepth(self, bitdepth):
+    def set_bitdepth(self, bitdepth: int):
         """Sets the camera bit depth."""
-        self.cam.PixelFormat.Value = f"Mono{bitdepth}"
+        self.cam.PixelFormat.SetValue(f"Mono{bitdepth}")
 
-    def set_exposure(self, exposure_s):
+    def set_exposure(self, exposure_s: float):
         """Sets the integration time in seconds."""
-        self.cam.ExposureTime.Value = exposure_s  # Convert seconds to microseconds if needed
+        print("sss")
+        self.cam.ExposureTime.SetValue(exposure_s * 1000)  # Convert miliseconds to microseconds if needed
         print("set expoasure to: " + str(exposure_s))
+        get_frame = self.cam.GetFrame()
+        print("get frame: " + str(get_frame))
 
-    def set_gain(self, gain):
+    def set_gain(self, gain: float):
         """Sets the camera gain."""
-        self.cam.Gain.Value = gain
+        self.cam.Gain.SetValue(gain)
 
-    def set_frame_rate(self, frame_rate):
+    def set_frame_rate(self, frame_rate: float):
         """Sets the frame rate in frames per second."""
         self.cam.AcquisitionFrameRateEnable = True
-        self.cam.AcquisitionFrameRate.Value = frame_rate
+        self.cam.AcquisitionFrameRate.SetValue(frame_rate)
 
     def set_woi(self, woi=None):
         """Sets the Window of Interest."""
-        if woi:
+        if isinstance(woi, list) and len(woi) == 4 and all(isinstance(i, int) for i in woi):
             offsetX, offsetY, width, height = woi
-            self.cam.OffsetX.Value = offsetX
-            self.cam.OffsetY.Value = offsetY
+            self.cam.OffsetX.SetValue(offsetX)
+            self.cam.OffsetY.SetValue(offsetY)
             self.set_width(width)
             self.set_height(height)
+        else:
+            raise print(f"Camera serial: {self.serial} Invalid Window of Interest format. Expected a list of 4 integers.")
 
     ################################################## GETTERS #########################################################
     def get_name(self):
@@ -129,11 +143,11 @@ class Basler(Camera):
 
     def get_exposure(self):
         """Gets the integration time in seconds."""
-        return self.cam.ExposureTime.Value / 1e6  # Convert microseconds to seconds
+        return self.cam.ExposureTime.Value / 1e3  # Convert microseconds to miliseconds
 
     def get_exposure_min_max(self):
         """Gets the minimum and maximum exposure time."""
-        return (self.cam.ExposureTime.Min / 1e6, self.cam.ExposureTime.Max / 1e6)  # Convert microseconds to seconds
+        return (self.cam.ExposureTime.Min / 1e3, self.cam.ExposureTime.Max / 1e3)  # Convert microseconds to miliseconds
 
     def get_gain(self):
         """Gets the gain value."""

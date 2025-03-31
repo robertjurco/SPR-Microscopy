@@ -15,6 +15,7 @@ class StartUpWindow(QMainWindow):
     # Define the signal
     device_activate_click = Signal(str)
     on_settings_clicked = Signal(str)
+    new_project = Signal(str)
 
     def __init__(self):
         """
@@ -103,28 +104,19 @@ class StartUpWindow(QMainWindow):
 
         # Create the QMenu for "New Project" dropdown
         self.project_menu = QMenu(new_project_button)
-        self.project_menu.addAction("Imaging", self.select_project_a)
-        self.project_menu.addAction("Spectroscopy", self.select_project_b)
-        self.project_menu.addAction("Camera FPS meter", self.select_project_c)
-        self.project_menu.addAction("SLM", self.select_project_c)
+        # Use lambda to delay the function call
+        self.project_menu.addAction("Imaging", lambda: self.select_project("Imaging"))
+        self.project_menu.addAction("Spectroscopy", lambda: self.select_project("Spectroscopy"))
+        self.project_menu.addAction("Camera FPS meter", lambda: self.select_project("Camera_FPS_meter"))
+        self.project_menu.addAction("SLM", lambda: self.select_project("SLM"))
 
         # Connect the "New Project" button to show the menu
         new_project_button.setMenu(self.project_menu)
 
-    def select_project_a(self):
+    def select_project(self, project_type):
         """ Handle selection of Project A """
-        print("Project A selected")
-        # Add your project-specific logic here
+        self.new_project.emit(project_type)
 
-    def select_project_b(self):
-        """ Handle selection of Project B """
-        print("Project B selected")
-        # Add your project-specific logic here
-
-    def select_project_c(self):
-        """ Handle selection of Project C """
-        print("Project C selected")
-        # Add your project-specific logic here
 
     def fill_tab_Available_Devices(self, tab_widget):
         """Fill the content of Tab 1 (Available Devices)."""

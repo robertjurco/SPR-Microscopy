@@ -30,6 +30,18 @@ class CameraWorker(QRunnable):
         """
         pass  # The work is done in the `acquire_frame` method triggered by QTimer
 
+    def start(self):
+        """
+        Start the worker.
+        """
+        self.timer.start(1000 / self.target_fps)
+
+    def stop(self):
+        """
+        Stop the worker.
+        """
+        self.timer.stop()
+
     def acquire_frame(self):
         """
         This method is triggered by the QTimer to acquire a frame from the camera.
@@ -61,7 +73,6 @@ class CameraWorker(QRunnable):
 class CameraSettingsController:
 
     def __init__(self, model, view, serial):
-        super().__init__()
         self.model = model
         self.view = view
         self.serial = serial
@@ -70,7 +81,7 @@ class CameraSettingsController:
         settings = self.model.device_manager.get_device_settings(serial)
 
         self.settings_dialog = ViewCameraSettings(serial, settings)
-        self.settings_dialog.settings_widget.settings_applied.connect(lambda settings: self.handle_settings_applied(settings))
+        self.settings_dialog.settings_widget.settings_applied.connect(self.handle_settings_applied)
 
         # create an image acquisition link
         camera = self.model.device_manager.loaded_devices[serial]
@@ -92,4 +103,8 @@ class CameraSettingsController:
         self.settings_dialog.update_frame(image)
 
     def handle_settings_applied(self, settings):
+        self.worker.stop()
+        self.model.device_manager.loaded_devices[self.serial].pause()
         self.model.device_manager.set_device_settings(self.serial, settings)
+        self.worker.start()
+        print(f"Settings for device {settings} set................................")

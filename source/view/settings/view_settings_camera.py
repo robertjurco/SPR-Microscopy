@@ -1,43 +1,77 @@
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QPixmap, QImage
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QSpinBox, QPushButton, QFormLayout, QDialog, QHBoxLayout, \
-    QSizePolicy, QLayout
+    QSizePolicy, QLayout, QDoubleSpinBox
+import cv2  # OpenCV for resizing
 
 
 class ImageDisplay(QWidget):
-    def __init__(self):
+    def __init__(self, scale_factor: float = 0.5, preferred_width: int = None, preferred_height: int = None):
         super().__init__()
         self.label = QLabel(self)
         self.label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         layout = QVBoxLayout()
         layout.addWidget(self.label)
         self.setLayout(layout)
+
+        # Store the scaling parameters
+        self.scale_factor = scale_factor
+        self.preferred_width = preferred_width
+        self.preferred_height = preferred_height
+
+        # Ensure that only one parameter is set: either scale_factor or preferred dimensions
+        if (self.scale_factor != 1.0 and self.preferred_width is not None and self.preferred_height is not None):
+            print(
+                "Warning: Both scaling factor and preferred width/height provided. Using preferred width/height instead.")
+
+        # Timer for updating the image at 60 FPS
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_image)
         self.timer.start(1000.0 / 60)  # 60 FPS
+
         self.current_image = None
         self.qimage = None  # Reusable QImage instance
 
     def update_image(self):
         if self.current_image is not None:
-            # Check if the image is grayscale
-            if len(self.current_image.shape) == 2:  # Grayscale image
-                height, width = self.current_image.shape
-                bytes_per_line = width  # One byte per pixel for grayscale
-                qimage = QImage(self.current_image.data, width, height, bytes_per_line, QImage.Format.Format_Grayscale8)
-                self.label.setPixmap(QPixmap.fromImage(qimage))
-            elif len(self.current_image.shape) == 3:  # Color image
-                height, width, channel = self.current_image.shape
-                bytes_per_line = channel * width
+            image_to_display = self.current_image  # Default to original image
 
-                if channel == 3:  # Assuming RGB
-                    qimage = QImage(self.current_image.data, width, height, bytes_per_line, QImage.Format.Format_RGB888)
-                    self.label.setPixmap(QPixmap.fromImage(qimage))
-                else:
-                    print("Unsupported channel count.")
-                    return
+            # Handle scaling if scale_factor is provided and no preferred width/height
+            if self.scale_factor != 1.0 and self.preferred_width is None and self.preferred_height is None:
+                height, width = self.current_image.shape[:2]
+                new_width = int(width * self.scale_factor)
+                new_height = int(height * self.scale_factor)
+                image_to_display = self.resize_image(self.current_image, new_width, new_height)
+
+            # Handle resizing to exact preferred width/height if provided
+            elif self.preferred_width is not None and self.preferred_height is not None:
+                image_to_display = self.resize_image(self.current_image, self.preferred_width, self.preferred_height)
+
+            # Display the resized image
+            self.display_image(image_to_display)
+
+    def display_image(self, image):
+        """ Helper function to display the image in the label """
+        if len(image.shape) == 2:  # Grayscale image
+            height, width = image.shape
+            bytes_per_line = width  # One byte per pixel for grayscale
+            qimage = QImage(image.data, width, height, bytes_per_line, QImage.Format.Format_Grayscale8)
+            self.label.setPixmap(QPixmap.fromImage(qimage))
+        elif len(image.shape) == 3:  # Color image
+            height, width, channel = image.shape
+            bytes_per_line = channel * width
+
+            if channel == 3:  # Assuming RGB
+                qimage = QImage(image.data, width, height, bytes_per_line, QImage.Format.Format_RGB888)
+                self.label.setPixmap(QPixmap.fromImage(qimage))
             else:
-                print("Invalid image shape:", self.current_image.shape)
+                print("Unsupported channel count.")
+        else:
+            print("Invalid image shape:", image.shape)
+
+    def resize_image(self, image, new_width, new_height):
+        """ Resize the image to the new width and height """
+        return cv2.resize(image, (new_width, new_height))
 
     def set_image(self, image):
         self.current_image = image
@@ -47,14 +81,10 @@ class ImageDisplay(QWidget):
         pixmap = QPixmap(file_path)
         self.label.setPixmap(pixmap)
 
-
 class ViewCameraSettings(QWidget):
     """
     GUI for displaying and modifying camera settings.
     """
-
-    settings_applied = Signal(dict)  # Signal for settings applied
-
     def __init__(self, serial: str, settings: dict):
         """
                 Constructs the CameraSettingsGUI with the specified Camera ID.
@@ -136,15 +166,13 @@ class SettingsWidget(QWidget):
 
         form_layout = QFormLayout()
 
-        self.width_label, self.width_spinbox = self.create_spinbox('Width:', self.DEFAULT_WIDTH, form_layout)
-        self.height_label, self.height_spinbox = self.create_spinbox('Height:', self.DEFAULT_HEIGHT, form_layout)
-        self.bitdepth_label, self.bitdepth_spinbox = self.create_spinbox('Bitdepth:', self.DEFAULT_BITDEPTH,
-                                                                         form_layout)
-        self.exposure_label, self.exposure_spinbox = self.create_spinbox('Exposure (ms):', self.DEFAULT_EXPOSURE,
-                                                                         form_layout)
-        self.gain_label, self.gain_spinbox = self.create_spinbox('Gain:', self.DEFAULT_GAIN, form_layout)
-        self.frame_rate_label, self.frame_rate_spinbox = self.create_spinbox('Frame Rate (fps):',
-                                                                             self.DEFAULT_FRAME_RATE, form_layout)
+        # Create spinboxes for various settings
+        self.width_label, self.width_spinbox, self.width_range_label = self.create_spinbox('Width:', self.DEFAULT_WIDTH, form_layout)
+        self.height_label, self.height_spinbox, self.height_range_label = self.create_spinbox('Height:', self.DEFAULT_HEIGHT, form_layout)
+        self.bitdepth_label, self.bitdepth_spinbox, self.bitdepth_range_label = self.create_spinbox('Bitdepth:', self.DEFAULT_BITDEPTH, form_layout)
+        self.exposure_label, self.exposure_spinbox, self.exposure_range_label = self.create_spinbox('Exposure (ms):', self.DEFAULT_EXPOSURE, form_layout, type='double')
+        self.gain_label, self.gain_spinbox, self.gain_range_label = self.create_spinbox('Gain:', self.DEFAULT_GAIN, form_layout, type='double')
+        self.frame_rate_label, self.frame_rate_spinbox, self.frame_rate_range_label = self.create_spinbox('Frame Rate (fps):', self.DEFAULT_FRAME_RATE, form_layout, type='double')
 
         self.apply_button = QPushButton('Apply Settings')
         self.apply_button.clicked.connect(self.apply_camera_settings)
@@ -155,23 +183,48 @@ class SettingsWidget(QWidget):
 
         self.setLayout(layout)
 
-    def create_spinbox(self, label: str, default_value: int, layout: QFormLayout):
+    def create_spinbox(self, label: str, default_value: int, layout: QFormLayout, type='int'):
         """
         Creates a labeled QSpinBox and adds it to the specified layout.
 
         :param label: The label text.
         :param default_value: The default value of the spinbox.
         :param layout: The layout to add the widgets to.
-        :return: Tuple containing the label widget and spinbox widget.
+        :return: Tuple containing the label widget, spinbox widget, and range label widget.
         """
         label_widget = QLabel(label)
-        label_range_widget = QLabel(str(default_value))
-        spinbox = QSpinBox()
+        label_range_widget = QLabel(str(default_value))  # Set the range label to show the default value
+
+        match type:
+            case 'int':
+                spinbox = QSpinBox()
+            case 'double':
+                spinbox = QDoubleSpinBox()
+                spinbox.setDecimals(2)  # Set to 2 decimal places
+            case _:
+                raise ValueError("Invalid type specified for spinbox. Expected 'int' or 'double'.")
+
+        # Set the number of decimals
         spinbox.setRange(1, 1000)
         spinbox.setValue(default_value)
+
+        # Connect the valueChanged signal to a function that updates the setting value
         spinbox.valueChanged.connect(self.update_setting_value(label.lower()))
-        layout.addRow(label_widget, spinbox)
-        return label_widget, spinbox
+
+        # Create a container layout for the three widgets (label, spinbox, and range label)
+        widget_layout = QHBoxLayout()
+        widget_layout.setContentsMargins(0, 0, 0, 0)  # Remove any extra margins
+        widget_layout.addWidget(spinbox)
+        widget_layout.addWidget(label_range_widget)
+
+        # Create a container widget and set the layout
+        container_widget = QWidget()
+        container_widget.setLayout(widget_layout)
+
+        # Add the container widget to the form layout
+        layout.addRow(label_widget, container_widget)
+
+        return label_widget, spinbox, label_range_widget
 
     def update_setting_value(self, setting_name: str):
         """
@@ -261,21 +314,28 @@ class SettingsWidget(QWidget):
 
         self.width_spinbox.setRange(self.camera_settings['width']['min'], self.camera_settings['width']['max'])
         self.width_spinbox.setValue(self.camera_settings['width']['value'])
+        self.width_range_label.setText(f'({self.camera_settings['width']['min']} - {self.camera_settings['width']['max']})')
 
         self.height_spinbox.setRange(self.camera_settings['height']['min'], self.camera_settings['height']['max'])
         self.height_spinbox.setValue(self.camera_settings['height']['value'])
+        self.height_range_label.setText(f'({self.camera_settings['height']['min']} - {self.camera_settings['height']['max']})')
 
         self.bitdepth_spinbox.setRange(self.camera_settings['bitdepth'], self.camera_settings['bitdepth'])
         self.bitdepth_spinbox.setValue(self.camera_settings['bitdepth'])
+        self.bitdepth_range_label.setText(f'({self.camera_settings['bitdepth']})')
 
         self.exposure_spinbox.setRange(self.camera_settings['exposure']['min'], self.camera_settings['exposure']['max'])
         self.exposure_spinbox.setValue(self.camera_settings['exposure']['value'])
+        self.exposure_range_label.setText(f'({self.camera_settings['exposure']['min']} - {self.camera_settings['exposure']['max']})')
 
         self.gain_spinbox.setRange(self.camera_settings['gain']['min'], self.camera_settings['gain']['max'])
         self.gain_spinbox.setValue(self.camera_settings['gain']['value'])
+        self.gain_range_label.setText(f'({self.camera_settings['gain']['min']} - {self.camera_settings['gain']['max']})')
 
         self.frame_rate_spinbox.setRange(self.camera_settings['frame_rate']['min'], self.camera_settings['frame_rate']['max'])
         self.frame_rate_spinbox.setValue(self.camera_settings['frame_rate']['value'])
+        self.frame_rate_range_label.setText(f'({self.camera_settings['frame_rate']['min']:.4f} - {self.camera_settings['frame_rate']['max']})')
+
 
     def get_camera_settings(self) -> dict:
         """

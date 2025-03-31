@@ -26,8 +26,8 @@ class PlotWidget(QWidget):
         layout = QVBoxLayout()
         layout.addWidget(self.toolbar)
         layout.addWidget(self.canvas)
-        layout.addWidget(self.plot_button)
-        layout.addWidget(self.save_data_button)
+        #layout.addWidget(self.plot_button)
+        #layout.addWidget(self.save_data_button)
 
         self.setLayout(layout)
 
