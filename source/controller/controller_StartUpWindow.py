@@ -1,7 +1,9 @@
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QImage
 
+from source.controller.projects.controller_camera_FPS import CameraFPSController
 from source.controller.settings.controller_settings_camera import CameraSettingsController
+from source.view.tabs.view_camera_FPS import CameraFPSView
 from source.view.tabs.view_imaging import ImagingView
 
 
@@ -53,7 +55,9 @@ class StartUpWindowController:
                 self.imaging_view.show()
             case "Spectroscopy":
                 pass
-            case "Camera FPS meter":
-                pass
+            case "Camera_FPS_meter":
+                self.camera_FPS_view = CameraFPSView()
+                self.camera_FPS_view.show()
+                self.camera_FPS_controller = CameraFPSController(self.model, self.camera_FPS_view)
             case "SLM":
                 pass

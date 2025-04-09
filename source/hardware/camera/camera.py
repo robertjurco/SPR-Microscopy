@@ -540,7 +540,6 @@ class Camera(QObject):
         settings : dict
             A dictionary containing all the settings to be applied to the camera.
         """
-        print("set_all_settings called")
         if 'width' in settings:
             width = settings['width']['value']
             min_width, max_width = self.get_width_min_max()
@@ -548,7 +547,6 @@ class Camera(QObject):
                 self.set_width(width)
             else:
                 raise ValueError(f"Width {width} is out of range ({min_width}, {max_width})")
-        print("width set")
         if 'height' in settings:
             height = settings['height']['value']
             min_height, max_height = self.get_height_min_max()
@@ -556,10 +554,8 @@ class Camera(QObject):
                 self.set_height(height)
             else:
                 raise ValueError(f"Height {height} is out of range ({min_height}, {max_height})")
-        print("height set")
         if 'bitdepth' in settings:
             self.set_bitdepth(settings['bitdepth'])
-        print("bitdepth set")
         if 'exposure' in settings:
             exposure = settings['exposure']['value']
             min_exposure, max_exposure = self.get_exposure_min_max()
@@ -567,7 +563,6 @@ class Camera(QObject):
                 self.set_exposure(exposure)
             else:
                 raise ValueError(f"Exposure {exposure} is out of range ({min_exposure}, {max_exposure})")
-        print("exposure set")
         if 'gain' in settings:
             gain = settings['gain']['value']
             min_gain, max_gain = self.get_gain_min_max()
@@ -575,7 +570,6 @@ class Camera(QObject):
                 self.set_gain(gain)
             else:
                 raise ValueError(f"Gain {gain} is out of range ({min_gain}, {max_gain})")
-        print("gain set")
         if 'frame_rate' in settings:
             frame_rate = settings['frame_rate']['value']
             min_frame_rate, max_frame_rate = self.get_frame_rate_min_max()
@@ -583,16 +577,11 @@ class Camera(QObject):
                 self.set_frame_rate(frame_rate)
             else:
                 raise ValueError(f"Frame rate {frame_rate} is out of range ({min_frame_rate}, {max_frame_rate})")
-        print("frame rate set")
         if 'woi' in settings:
             self.set_woi(settings['woi'])
-        print("woi set")
         if 'brightness' in settings:
             self.set_brightness(settings['brightness'])
-        print("brightness set")
         if 'contrast' in settings:
             self.set_contrast(settings['contrast'])
-        print("contrast set")
         if 'saturation' in settings:
             self.set_saturation(settings['saturation'])
-        print("saturation set")
