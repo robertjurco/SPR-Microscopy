@@ -1,6 +1,6 @@
 from PySide6.QtCore import Qt
 from source.view.settings.view_settings_camera import ImageDisplay
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QComboBox, QLabel, QPushButton, QHBoxLayout, QSplitter
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QComboBox, QLabel, QPushButton, QHBoxLayout, QSplitter, QSpinBox
 from source.view.tabs.misc import PlotWidget  # Assuming this is a custom widget for plotting
 
 class ImagingView(QWidget):
@@ -49,6 +49,18 @@ class ImagingView(QWidget):
         # Add label to display noise value (will update later based on calculations)
         self.noise_label = QLabel("Noise: Not calculated yet")
         settings_layout.addWidget(self.noise_label)
+
+        # Create label for "Average Noise over"
+        self.average_noise_label = QLabel("Noise Averaging interval♣:")
+        settings_layout.addWidget(self.average_noise_label)
+
+        # Create spinbox for positive numbers with a step size of 10
+        self.noise_duration_spinbox = QSpinBox()
+        self.noise_duration_spinbox.setRange(10, 3600)  # set seconds 1, max 1000 (you can adjust as needed)
+        self.noise_duration_spinbox.setSingleStep(10)  # set step size to 10
+        self.noise_duration_spinbox.setPrefix("Seconds: ")
+
+        settings_layout.addWidget(self.noise_duration_spinbox)
 
         bottom_layout.addWidget(settings_widget)  # Add the settings widget with camera selection, buttons, and label
 

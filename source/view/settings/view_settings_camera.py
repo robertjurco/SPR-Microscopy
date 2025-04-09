@@ -117,6 +117,10 @@ class ViewCameraSettings(QWidget):
     def update_frame(self, image):
         self.image_display.set_image(image)
 
+    def update_fps(self, fps):
+        self.settings_widget.update_fps(fps)
+
+
 class SettingsWidget(QWidget):
     """
     GUI for displaying and modifying camera settings.
@@ -173,6 +177,11 @@ class SettingsWidget(QWidget):
         self.exposure_label, self.exposure_spinbox, self.exposure_range_label = self.create_spinbox('Exposure (ms):', self.DEFAULT_EXPOSURE, form_layout, type='double')
         self.gain_label, self.gain_spinbox, self.gain_range_label = self.create_spinbox('Gain:', self.DEFAULT_GAIN, form_layout, type='double')
         self.frame_rate_label, self.frame_rate_spinbox, self.frame_rate_range_label = self.create_spinbox('Frame Rate (fps):', self.DEFAULT_FRAME_RATE, form_layout, type='double')
+
+        # Make the spinbox read-onlyy, make it non-editable (won't allow the user to change the value)
+        self.frame_rate_spinbox.setEnabled(False)  # Disable the user interaction
+        self.frame_rate_spinbox.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons)  # Hide the increment/decrement buttons
+
 
         self.apply_button = QPushButton('Apply Settings')
         self.apply_button.clicked.connect(self.apply_camera_settings)
@@ -332,8 +341,6 @@ class SettingsWidget(QWidget):
         self.gain_spinbox.setValue(self.camera_settings['gain']['value'])
         self.gain_range_label.setText(f'({self.camera_settings['gain']['min']} - {self.camera_settings['gain']['max']})')
 
-        self.frame_rate_spinbox.setRange(self.camera_settings['frame_rate']['min'], self.camera_settings['frame_rate']['max'])
-        self.frame_rate_spinbox.setValue(self.camera_settings['frame_rate']['value'])
         self.frame_rate_range_label.setText(f'({self.camera_settings['frame_rate']['min']:.4f} - {self.camera_settings['frame_rate']['max']})')
 
 
@@ -346,6 +353,9 @@ class SettingsWidget(QWidget):
         self.camera_settings['bitdepth'] = self.bitdepth_spinbox.value()
         self.camera_settings['exposure']['value'] = self.exposure_spinbox.value()
         self.camera_settings['gain']['value'] = self.gain_spinbox.value()
-        self.camera_settings['frame_rate']['value'] = self.frame_rate_spinbox.value()
+        #self.camera_settings['frame_rate']['value'] = self.frame_rate_spinbox.value()
 
         return self.camera_settings
+
+    def update_fps(self, fps):
+        self.frame_rate_spinbox.setValue(fps)

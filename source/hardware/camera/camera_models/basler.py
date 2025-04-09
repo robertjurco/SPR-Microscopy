@@ -35,6 +35,10 @@ class Basler(Camera):
         # Disable autoexposure
         self.cam.ExposureAuto.SetValue("Off")
 
+        # Initialize default frame rate and exposure time variables
+        self.target_fps = 60  # Default frame rate, this can be updated later
+        self.exposure_time = None  # To track the exposure time
+
     def close(self):
         """See :meth:`.Camera.close`."""
         self.cam.Close()
@@ -60,7 +64,7 @@ class Basler(Camera):
     def acquire_image(self):
         """Acquires an image from the camera."""
         if self.cam.IsGrabbing():
-            grab_result = self.cam.RetrieveResult(1000, pylon.TimeoutHandling_ThrowException) # 0 or 5000 ???
+            grab_result = self.cam.RetrieveResult(5000, pylon.TimeoutHandling_ThrowException) # 0 or 5000 ???
             if grab_result.GrabSucceeded():
                 return grab_result.Array
             grab_result.Release()
@@ -88,13 +92,50 @@ class Basler(Camera):
         """Sets the camera bit depth."""
         self.cam.PixelFormat.SetValue(f"Mono{bitdepth}")
 
-    def set_exposure(self, exposure_s: float):
-        """Sets the integration time in seconds."""
-        print("sss")
-        self.cam.ExposureTime.SetValue(exposure_s * 1000)  # Convert miliseconds to microseconds if needed
-        print("set expoasure to: " + str(exposure_s))
-        get_frame = self.cam.GetFrame()
-        print("get frame: " + str(get_frame))
+
+    def set_exposure(self, exposure_time: float):
+        """
+        Set the exposure time or enable auto-exposure.
+        Ensure that exposure time does not go below the camera's minimum allowable exposure.
+        """
+        # Get the camera's minimum exposure time
+        min_exposure_time = self.get_exposure_min_max()[0]
+
+        if exposure_time:
+            # Disable autoexposure
+            self.cam.ExposureAuto.SetValue("Off")
+            # Ensure that exposure time is above the minimum allowed value
+            exposure_time = max(exposure_time, min_exposure_time)
+            self.exposure_time = exposure_time
+            self.cam.ExposureTime.SetValue(exposure_time * 1000)
+        else:
+            # Enable auto exposure if no exposure time is provided
+            self.cam.ExposureAuto.SetValue('Continuous')
+
+        # Adjust frame rate based on exposure time
+        self.adjust_frame_rate_based_on_exposure()
+        self.set_frame_rate(self.target_fps)
+        self.cam.AcquisitionFrameRateEnable.Value = False
+
+        # Prints for tests
+        print(f"Exposure Time: {self.get_exposure()}")
+        print(f"Target Frame Rate: {self.target_fps}")
+
+    def adjust_frame_rate_based_on_exposure(self):
+        """
+        Adjust the frame rate based on the exposure time.
+        If exposure time is at the minimum, set the highest possible frame rate.
+        """
+        min_exposure_time = self.get_exposure_min_max()[0]
+        if self.exposure_time is None or self.exposure_time == min_exposure_time:
+            # If exposure time is minimum or auto-exposure is used, set frame rate to maximum
+            max_frame_rate = self.cam.ResultingFrameRateAbs.GetMax()
+            self.target_fps = max_frame_rate
+        else:
+            # Calculate the optimal frame rate based on exposure time (if not at minimum exposure)
+            max_frame_rate = self.get_frame_rate_min_max()[1]
+            optimal_frame_rate = 1000 /  self.exposure_time  # Adjusting to exposure in miliseconds
+            self.target_fps = min(optimal_frame_rate, max_frame_rate)
 
     def set_gain(self, gain: float):
         """Sets the camera gain."""
@@ -102,19 +143,20 @@ class Basler(Camera):
 
     def set_frame_rate(self, frame_rate: float):
         """Sets the frame rate in frames per second."""
-        self.cam.AcquisitionFrameRateEnable = True
+        self.cam.AcquisitionFrameRateEnable = False # Disables frame rate, otherwise we would limit the maximal frame rate
         self.cam.AcquisitionFrameRate.SetValue(frame_rate)
+
 
     def set_woi(self, woi=None):
         """Sets the Window of Interest."""
-        if isinstance(woi, list) and len(woi) == 4 and all(isinstance(i, int) for i in woi):
+        try:
             offsetX, offsetY, width, height = woi
             self.cam.OffsetX.SetValue(offsetX)
             self.cam.OffsetY.SetValue(offsetY)
             self.set_width(width)
             self.set_height(height)
-        else:
-            raise print(f"Camera serial: {self.serial} Invalid Window of Interest format. Expected a list of 4 integers.")
+        except Exception as e:
+            print(f"Camera serial: {self.serial} Invalid Window of Interest format. Expected a list of 4 integers.")
 
     ################################################## GETTERS #########################################################
     def get_name(self):

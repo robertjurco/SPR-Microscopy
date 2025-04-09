@@ -44,7 +44,7 @@ class StartUpWindowController:
 
     def open_settings_window(self, serial):
         # Create a runnable instance for CameraSettingsController
-        CameraSettingsController(self.model, self.view, serial)
+        self.camera_settigns_controller = CameraSettingsController(self.model, self.view, serial)
 
     def new_project(self, project_type: str):
         match project_type:
