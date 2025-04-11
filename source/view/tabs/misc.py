@@ -61,7 +61,7 @@ class PlotWidget(QWidget):
             self.ax.set_yscale("log")
 
         if self.scatter_plot:
-            self.ax.scatter(x, y, color="blue")
+            self.ax.scatter(x, y, color="blue", s=2)
         else:
             self.ax.plot(x, y, color="blue")
 

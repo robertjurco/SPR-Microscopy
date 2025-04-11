@@ -1,7 +1,137 @@
-from PySide6.QtCore import Qt
-from source.view.settings.view_settings_camera import ImageDisplay
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QComboBox, QLabel, QPushButton, QHBoxLayout, QSplitter, QSpinBox
 from source.view.tabs.misc import PlotWidget  # Assuming this is a custom widget for plotting
+
+import csv
+import numpy as np
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QPushButton, QFileDialog
+)
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.figure import Figure
+from PySide6.QtCore import Slot
+
+
+class ColorMeshWidget(QWidget):
+    def __init__(self, parent=None, x_label="X-axis", y_label="Y-axis", log_scale=False):
+        super().__init__(parent)
+
+        self.figure = Figure()
+        self.canvas = FigureCanvas(self.figure)
+        self.toolbar = NavigationToolbar(self.canvas, self)
+
+        self.ax = self.figure.add_subplot(111)
+        self.colorbar = None
+
+        self.x_label = x_label
+        self.y_label = y_label
+        self.log_scale = log_scale
+
+        self.plot_button = QPushButton("Plot Data")
+        self.save_data_button = QPushButton("Save Data")
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.toolbar)
+        layout.addWidget(self.canvas)
+        layout.addWidget(self.plot_button)
+        layout.addWidget(self.save_data_button)
+        self.setLayout(layout)
+
+        self.plot_button.clicked.connect(self._trigger_plot)
+        self.save_data_button.clicked.connect(self.save_data)
+
+        self.data = {
+            "x_vals": [],  # list of unique x values
+            "y_vals": [],  # list of unique y values
+            "z_grid": []   # 2D grid as list of lists
+        }
+
+    def _trigger_plot(self):
+        if self.data["x_vals"] and self.data["y_vals"] and self.data["z_grid"]:
+            self._replot()
+
+    def _replot(self):
+        self.ax.clear()
+
+        x = self.data["x_vals"]
+        y = self.data["y_vals"]
+        z = np.array(self.data["z_grid"])
+
+        if self.log_scale:
+            self.ax.set_xscale("log")
+            self.ax.set_yscale("log")
+        else:
+            self.ax.set_xscale("linear")
+            self.ax.set_yscale("linear")
+
+        mesh = self.ax.pcolormesh(x, y, z, shading='auto', cmap='viridis')
+
+        if self.colorbar:
+            self.colorbar.remove()
+        self.colorbar = self.figure.colorbar(mesh, ax=self.ax)
+
+        self.ax.set_xlabel(self.x_label)
+        self.ax.set_ylabel(self.y_label)
+        self.figure.tight_layout()
+        self.canvas.draw()
+
+
+    def update_plot(self, x, y, z_value):
+        """
+        Add a single (x, y, z) value into the grid.
+        Dynamically updates meshgrid and Z matrix.
+        """
+        x_vals = self.data["x_vals"]
+        y_vals = self.data["y_vals"]
+        z_grid = self.data["z_grid"]
+
+        # Insert x if new
+        if x not in x_vals:
+            x_vals.append(x)
+            x_vals.sort()
+            for row in z_grid:
+                row.insert(x_vals.index(x), np.nan)
+
+        # Insert y if new
+        if y not in y_vals:
+            y_vals.append(y)
+            y_vals.sort()
+            row_len = len(x_vals)
+            z_grid.insert(y_vals.index(y), [np.nan] * row_len)
+
+        # Update z value at proper index
+        xi = x_vals.index(x)
+        yi = y_vals.index(y)
+        z_grid[yi][xi] = z_value
+
+        self._replot()
+
+    @Slot()
+    def save_data(self):
+        if not self.data["z_grid"]:
+            return
+
+        options = QFileDialog.Options()
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Save Data", "", "CSV Files (*.csv);;All Files (*)", options=options
+        )
+        if file_path:
+            with open(file_path, 'w', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow([""] + self.data["x_vals"])
+                for y, row in zip(self.data["y_vals"], self.data["z_grid"]):
+                    writer.writerow([y] + row)
+
+    def set_labels(self, x_label, y_label):
+        self.x_label = x_label
+        self.y_label = y_label
+        self.ax.set_xlabel(self.x_label)
+        self.ax.set_ylabel(self.y_label)
+        self.canvas.draw()
+
+    def set_log_scale(self, log_scale):
+        self.log_scale = log_scale
+        self._replot()
 
 class CameraFPSView(QWidget):
     def __init__(self):
@@ -17,7 +147,11 @@ class CameraFPSView(QWidget):
 
         # Top part - PlotWidget (on the left side)
         self.plot_widget = PlotWidget(x_label="Exposure [ms]", y_label="FPS", log_scale=True, scatter_plot=True)  # Assuming you have a PlotWidget defined elsewhere
-        main_layout.addWidget(self.plot_widget)  # Give it more space with a stretch factor
+        main_layout.addWidget(self.plot_widget)
+        self.plot_widget_2 = PlotWidget(x_label="Height [px]", y_label="FPS", scatter_plot=True)  # Assuming you have a PlotWidget defined elsewhere
+        main_layout.addWidget(self.plot_widget_2)  # Give it more space with a stretch factor
+        self.plot_widget_3 = ColorMeshWidget(x_label="Height [px]", y_label="Exposure [ms]",)  # Assuming you have a PlotWidget defined elsewhere
+        main_layout.addWidget(self.plot_widget_3)  # Give it more space with a stretch factor
 
         # Right part - Settings section
         settings_widget = QWidget()
@@ -57,16 +191,6 @@ class CameraFPSView(QWidget):
 
         # Set the layout for this window
         self.setLayout(main_layout)
-
-    def calculate_image_height(self):
-        """Calculate height for the image display, using a fixed height as a ratio of the screen's height."""
-        screen_height = self.screen().availableGeometry().height()
-
-        # Set a fixed height ratio for the image display (this will be the height of the ImageDisplay)
-        bottom_height_ratio = 1 / 3  # Set this ratio to adjust image height
-
-        bottom_height = screen_height * bottom_height_ratio
-        return int(bottom_height)
 
     def populate_camera_list(self):
         """Populate the camera selection list."""
