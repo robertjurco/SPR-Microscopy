@@ -2,7 +2,7 @@ from ctypes import *
 
 
 #region import dll functions
-EXULUSLib=cdll.LoadLibrary("C:/Users/jurco/PycharmProjects/SPR_microscopy_OLD/slmsuite/slmsuite/hardware/slms/exulus_command_library.dll")
+EXULUSLib=cdll.LoadLibrary("C:/Users/jurco/PycharmProjects/SPR-Microscopy/source/hardware/slms/exulus_command_library.dll")
 
 """comman command
 """
