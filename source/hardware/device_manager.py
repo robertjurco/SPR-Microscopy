@@ -2,9 +2,6 @@ import threading
 from typing import Dict, Any
 
 from PySide6.QtCore import QThread
-from adodbapi import connect
-from adodbapi.apibase import pythonTimeConverter
-from numba.cuda.printimpl import print_item
 from pypylon import pylon
 import pylablib as pll
 from pylablib.devices import Thorlabs, NKT
