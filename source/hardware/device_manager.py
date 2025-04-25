@@ -9,6 +9,8 @@ from scipy.sparse.csgraph import connected_components
 
 import source.hardware.slms.EXULUS_COMMAND_LIB as ThorlabsExulus
 from source.hardware.camera.camera_models.basler import Basler
+from source.hardware.usb_helper import get_usb_devices_by_serial, get_usb_info
+
 
 class ThreadWorker(QThread):
 
@@ -35,8 +37,14 @@ class DeviceManager:
         self.loaded_devices: Dict[str, Any] = {}
         # Dictionary to keep track of device threads
         self.device_threads: Dict[str, threading.Thread] = {}
+        # Dictionary to store USB devices with serial number as key
+        self.usb_devices_info: Dict[str, Dict[str, Any]] = {}
 
     def auto_detect_devices(self):
+        get_usb_info()
+        #self.usb_devices_info = get_usb_info()
+        #print(self.usb_devices_info)
+
         try:
             # Temporary set to track currently connected devices
             current_device_serials = set()

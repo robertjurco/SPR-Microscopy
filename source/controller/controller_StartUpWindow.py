@@ -31,7 +31,7 @@ class StartUpWindowController:
         self.model.device_manager.auto_detect_devices()
         self.connected_devices = self.model.device_manager.list_connected_devices()
 
-        self.view.reload(self.connected_devices)
+        self.view.reload_tab_Available_Devices(self.connected_devices)
 
     def on_device_activated(self, serial: str):
         """

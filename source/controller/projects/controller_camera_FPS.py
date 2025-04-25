@@ -14,9 +14,9 @@ class CameraFPSController:
         self.camera = self.model.device_manager.loaded_devices[self.serial]
         self.worker_thread = CameraWorkerThread(self.camera, FPS_averaging = 10.0, target_fps=1000000)
 
-        self.worker_thread.fps_updated.connect(self.on_fps_measurement_height)
+        self.worker_thread.fps_updated.connect(self.on_fps_measurement_exposure)
 
-        self.start_measurement_height()
+        self.start_measurement_exposure()
 
     def start_measurement_exposure(self):
         self.exposure_bounds = self.camera.get_exposure_min_max()
@@ -72,7 +72,7 @@ class CameraFPSController:
 
         return int(height)
 
-    def on_fps_measurement_EXP(self, fps):
+    def on_fps_measurement_exposure(self, fps):
         print(f"FPS: {fps}, Exposure: {self.exposure}")
         self.project_view.plot_widget.update_plot(self.exposure, fps)
 

@@ -299,7 +299,7 @@ class StartUpWindow(QMainWindow):
             if item is not None:
                 item.setBackground(color)
 
-    def reload(self, devices_dict: Dict[str, Dict[str, Any]]):
+    def reload_tab_Available_Devices(self, devices_dict: Dict[str, Dict[str, Any]]):
         """Reload the table with new data from the provided dictionary."""
 
         self.connected_devices = devices_dict
