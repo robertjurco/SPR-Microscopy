@@ -33,7 +33,7 @@ class StartUpWindowController:
 
         self.view.reload_tab_Available_Devices(self.connected_devices)
 
-    def on_device_activated(self, serial: str):
+    def on_device_activated(self, serial: str, already_active: bool):
         """
         Slot that will handle the signal when a device is activated.
         This will be called when the device_activated signal is emitted.
@@ -41,8 +41,12 @@ class StartUpWindowController:
         Args:
             serial (str): The serial number of the activated device.
         """
-        result = self.model.device_manager.load_device(serial)
-        self.view.activation_response(serial, result)
+        if not already_active:
+            result = self.model.device_manager.load_device(serial)
+            self.view.activation_response(serial, result)
+        else:
+            result = self.model.device_manager.close_device(serial)
+            self.view.activation_response(serial, result)
 
     def open_settings_window(self, serial):
         # Create a runnable instance for CameraSettingsController

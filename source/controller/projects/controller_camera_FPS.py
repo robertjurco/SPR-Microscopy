@@ -5,7 +5,7 @@ from source.view.tabs.view_imaging import ImagingView
 
 class CameraFPSController:
 
-    def __init__(self, model, project_view, serial = '24514092'):
+    def __init__(self, model, project_view, serial = '40463210'):
         self.model = model
         self.project_view = project_view
 
@@ -26,7 +26,7 @@ class CameraFPSController:
     def start_measurement_height(self):
         self.height_bounds = self.camera.get_height_min_max()
         self.height = self.height_bounds[1]
-        settings = {'exposure': {'value': 0.021}, 'height': {'value': self.height}}
+        settings = {'exposure': {'value': 0.0161}, 'height': {'value': self.height}}
 
         self.model.device_manager.set_device_settings(self.serial, settings)
         self.worker_thread.start()

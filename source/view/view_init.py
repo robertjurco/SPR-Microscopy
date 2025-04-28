@@ -13,7 +13,7 @@ class StartUpWindow(QMainWindow):
     """
 
     # Define the signal
-    device_activate_click = Signal(str)
+    device_activate_click = Signal(str, bool)
     on_settings_clicked = Signal(str)
     new_project = Signal(str)
 
@@ -117,7 +117,6 @@ class StartUpWindow(QMainWindow):
         """ Handle selection of Project A """
         self.new_project.emit(project_type)
 
-
     def fill_tab_Available_Devices(self, tab_widget):
         """Fill the content of Tab 1 (Available Devices)."""
         layout = QVBoxLayout()
@@ -170,6 +169,7 @@ class StartUpWindow(QMainWindow):
 
             # Create an activation button for the last column
             activate_button = QPushButton("Activate")
+            activate_button.setProperty("activated", False)
             activate_button.setFixedSize(100, 30)
             # Connect the activation button to a handler function
             activate_button.clicked.connect(partial(self.toggle_activation, table_widget, row))
@@ -193,14 +193,30 @@ class StartUpWindow(QMainWindow):
 
         return table_widget
 
-    def show_context_menu(self, pos):
+    def show_context_menu(self, position):
         """Show context menu on right-click in the table."""
+
         # Get the item at the clicked position
-        index = self.tab1_widget.indexAt(pos)
+        index = self.tab1_widget.indexAt(position)
+        if not index.isValid():
+            return
+
+        row = index.row()
+        button = self.tab1_widget.cellWidget(row, 4)
+
+        if button is None:
+            return
+
+        # Check if device is activated
+        is_activated = button.property("activated")
+        if not is_activated:
+            # If not activated, do nothing
+            return
+
 
         if index.isValid():
             # Get the serial number from the clicked row (column 2)
-            serial = self.tab1_widget.item(index.row(), 2).text()
+            serial = self.tab1_widget.item(row, 2).text()
 
             # Create the context menu
             menu = QMenu(self)
@@ -219,7 +235,7 @@ class StartUpWindow(QMainWindow):
             menu.addAction(settings_action)
 
             # Show the menu at the position of the right-click
-            menu.exec_(self.tab1_widget.viewport().mapToGlobal(pos))
+            menu.exec_(self.tab1_widget.viewport().mapToGlobal(position))
 
     def emit_settings_signal(self, serial):
         """Emit the on_settings_clicked signal with the serial number."""
@@ -247,10 +263,9 @@ class StartUpWindow(QMainWindow):
         # Check the current state of the button (Activate or Deactivate)
         button = table_widget.cellWidget(row, 4)
 
-        if button.text() == "Activate":
-            # Emit the signal with the serial number of the device
-            serial = table_widget.item(row, 2).text()  # Assuming serial is in the third column
-            self.device_activate_click.emit(serial)  # Emit the signal
+        # Emit the signal with the serial number of the device
+        serial = table_widget.item(row, 2).text()  # Assuming serial is in the third column
+        self.device_activate_click.emit(serial, button.property("activated"))  # Emit the signal
 
     def activation_response(self, serial: str, state: int):
         """
@@ -274,18 +289,28 @@ class StartUpWindow(QMainWindow):
         if row != -1:
             # Find the button in the last column (column index 4)
             button = self.tab1_widget.cellWidget(row, 4)
+            is_active = button.property("activated")
 
             # Check the state and update the row accordingly
             if state == 1:
-                # Activate (success): Change the background color to light green
-                self.setRowBackgroundColor(self.tab1_widget, row, QColor(144, 238, 144))  # Light Green
-                button.setText("Deactivate")  # Change the text to Deactivate
-                button.setEnabled(False)  # Disable the button (optional)
+                if not is_active:
+                    # Activate (success): Change the background color to light green
+                    self.setRowBackgroundColor(self.tab1_widget, row, QColor(144, 238, 144))  # Light Green
+                    button.setText("Deactivate")  # Change the text to Deactivate
+                    #button.setEnabled(False)  # Disable the button (optional)
+                    button.setProperty("activated", True)  # <-- Store activation state
+                if is_active:
+                    # Deactive (success): Change the background color to white
+                    self.setRowBackgroundColor(self.tab1_widget, row, QColor(255, 255, 255))  # White
+                    button.setText("Activate")  # Change the text to Deactivate
+                    #button.setEnabled(False)  # Disable the button (optional)
+                    button.setProperty("activated", False)  # <-- Store activation state
             else:
                 # Deactivate (failure): Change the background color to light grey
                 self.setRowBackgroundColor(self.tab1_widget, row, QColor(255, 182, 193))  # Light Red
                 button.setText("Activate")  # Change the text to Activate
                 button.setEnabled(True)  # Re-enable the button (optional)
+                button.setProperty("activated", False)  # <-- Not activated
 
         else:
             print(f"Device with serial {serial} not found in the table.")
