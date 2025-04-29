@@ -3,13 +3,25 @@ from typing import Dict, Any
 
 from PySide6.QtCore import QThread
 from pypylon import pylon
-import pylablib as pll
-from pylablib.devices import Thorlabs, NKT
+from pylablib.devices import Thorlabs
 from scipy.sparse.csgraph import connected_components
 
 import source.hardware.slms.EXULUS_COMMAND_LIB as ThorlabsExulus
 from source.hardware.camera.camera_models.basler import Basler
+from source.hardware.motion_control.motion_control_models.thorlabs_kcube_KDC101 import KinesisMotor
+from source.hardware.motion_control.motion_control_models.thorlabs_kcube_KSC101 import KinesisSolenoid
+
 #from source.hardware.usb_helper import get_usb_devices_by_serial, get_usb_info
+
+# Define a mapping of device types to their corresponding classes
+DEVICE_CLASS_REGISTRY = {
+    'camera': Basler,
+    'k_cube_KDC': KinesisMotor,
+    'k_cube_KSC': KinesisSolenoid
+    # Add new device types here
+    # 'motor': MotorDevice,
+    # 'sensor': SensorDevice,
+}
 
 
 class ThreadWorker(QThread):
@@ -68,7 +80,7 @@ class DeviceManager:
                 if serial_number not in self.connected_devices:
                     self.connected_devices[serial_number] = {
                         'name': description,
-                        'type': 'motion_control',
+                        'type': 'k_cube',
                         'status': 'connected'
                     }
 
@@ -110,29 +122,36 @@ class DeviceManager:
 
         Args:
             serial (str): Serial number of the device.
-            device_type (str): Type of the device.
 
         Returns:
             int: 1 if device loaded successfully, 0 otherwise.
         """
-        device_type = self.list_connected_devices()[serial]['type']
-
         try:
-            if device_type == "camera":
-                print(f"Attempting to load device with serial {serial} as a camera.")
-                self.loaded_devices[serial] = Basler(serial)
-                if self.loaded_devices[serial] is not None:
-                    print(f"Device with serial {serial} loaded successfully.")
-                    return 1  # Return 1 on success
-                else:
-                    print(f"Device with serial {serial} is not loaded.")
-                    return 0  # Return 0 on failure
-            else:
+            device_info = self.list_connected_devices().get(serial)
+            if not device_info:
+                print(f"No device found with serial {serial}.")
+                return 0
+
+            device_type = device_info['type']
+            device_class = DEVICE_CLASS_REGISTRY.get(device_type)
+
+            if not device_class:
                 print(f"Unsupported device type: {device_type}.")
-                return 0  # Return 0 for unsupported device types
+                return 0
+
+            print(f"Attempting to load device with serial {serial} as a {device_type}.")
+            self.loaded_devices[serial] = device_class(serial)
+
+            if self.loaded_devices[serial] is not None:
+                print(f"Device with serial {serial} loaded successfully.")
+                return 1
+            else:
+                print(f"Device with serial {serial} failed to load.")
+                return 0
+
         except Exception as e:
             print(f"Failed to load device with serial {serial}. Error: {e}")
-            return 0  # Return 0 on exception
+            return 0
 
     def close_device(self, serial: str) -> bool:
         """

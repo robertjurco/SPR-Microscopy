@@ -1,5 +1,6 @@
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QImage
+from plumbum.cli import switch
 
 from source.controller.projects.controller_camera_FPS import CameraFPSController
 from source.controller.settings.controller_settings_camera import CameraSettingsController
@@ -49,8 +50,16 @@ class StartUpWindowController:
             self.view.activation_response(serial, result)
 
     def open_settings_window(self, serial):
-        # Create a runnable instance for CameraSettingsController
-        self.camera_settigns_controller = CameraSettingsController(self.model, self.view, serial)
+        # Get the type of the device
+        connected_devices = self.model.device_manager.list_connected_devices()
+        device_type = connected_devices[serial]['type']
+
+        # Create a runnable instance for SettingsController
+        match  device_type:
+            case 'camera':
+                camera_settings_controller = CameraSettingsController(self.model, self.view, serial)
+            case 'k_cube':
+                k_cube_settings_controller = CameraSettingsController(self.model, self.view, serial)
 
     def new_project(self, project_type: str):
         match project_type:
