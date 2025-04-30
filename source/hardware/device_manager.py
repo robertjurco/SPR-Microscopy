@@ -40,7 +40,7 @@ class ThreadWorker(QThread):
         self.running = False
 
 class DeviceManager:
-    def __init__(self):
+    def __init__(self, logger):
         self.threads: Dict[str, QThread] = {}
         self.thread_workers: Dict[str, ThreadWorker] = {}
         # Dictionary to store connected devices with serial number as key
@@ -51,6 +51,8 @@ class DeviceManager:
         self.device_threads: Dict[str, threading.Thread] = {}
         # Dictionary to store USB devices with serial number as key
         self.usb_devices_info: Dict[str, Dict[str, Any]] = {}
+
+        self.logger = logger
 
     def auto_detect_devices(self):
         #get_usb_info()
@@ -129,28 +131,28 @@ class DeviceManager:
         try:
             device_info = self.list_connected_devices().get(serial)
             if not device_info:
-                print(f"No device found with serial {serial}.")
+                self.logger.info(f"No device found with serial {serial}.")
                 return 0
 
             device_type = device_info['type']
             device_class = DEVICE_CLASS_REGISTRY.get(device_type)
 
             if not device_class:
-                print(f"Unsupported device type: {device_type}.")
+                self.logger.info(f"Unsupported device type: {device_type}.")
                 return 0
 
-            print(f"Attempting to load device with serial {serial} as a {device_type}.")
+            self.logger.info(f"Attempting to load device with serial {serial} as a {device_type}.")
             self.loaded_devices[serial] = device_class(serial)
 
             if self.loaded_devices[serial] is not None:
-                print(f"Device with serial {serial} loaded successfully.")
+                self.logger.info(f"Device with serial {serial} loaded successfully.")
                 return 1
             else:
-                print(f"Device with serial {serial} failed to load.")
+                self.logger.info(f"Device with serial {serial} failed to load.")
                 return 0
 
         except Exception as e:
-            print(f"Failed to load device with serial {serial}. Error: {e}")
+            self.logger.error(f"Failed to load device with serial {serial}. Error: {e}")
             return 0
 
     def close_device(self, serial: str) -> bool:

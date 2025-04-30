@@ -2,7 +2,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QAction, QColor, QPalette, QFont
 from PySide6.QtWidgets import QMainWindow, QToolBar, QStatusBar, QWidget, QHBoxLayout, QSplitter, QMenu, QVBoxLayout, \
     QTabWidget, QLabel, QPushButton, QSpacerItem, QSizePolicy, QTableWidget, QTableWidgetItem, QHeaderView, \
-    QAbstractItemView, QDialog
+    QAbstractItemView, QDialog, QTextEdit
 from functools import partial
 from typing import Dict, Any
 
@@ -17,12 +17,14 @@ class StartUpWindow(QMainWindow):
     on_settings_clicked = Signal(str)
     new_project = Signal(str)
 
-    def __init__(self):
+    def __init__(self, logger):
         """
         Initialize the View class.
         This method sets up initial values for the toolbar actions and central widget.
         """
         super().__init__()
+
+        self.logger = logger
 
         self.setWindowTitle("SPR UP 2")
 
@@ -49,10 +51,14 @@ class StartUpWindow(QMainWindow):
         tab3 = QWidget()
         self.fill_tab_Active_Threads(tab3)
 
+        tab4 = QWidget()
+        self.fill_tab_Logging(tab4)
+
         # Add the tabs to the tab widget
         tab_widget.addTab(tab1, "Available Devices")
         tab_widget.addTab(tab2, "Active Projects")
         tab_widget.addTab(tab3, "Active Threads")
+        tab_widget.addTab(tab4, "Logs")
 
         # Set a dark brown background color behind the tabs
         #tab_widget.setAutoFillBackground(True)
@@ -254,6 +260,20 @@ class StartUpWindow(QMainWindow):
         tab_layout.addWidget(QLabel("Currently Active Threads"))
         # Add more content related to Active Threads here.
         tab_widget.setLayout(tab_layout)
+
+    def fill_tab_Logging(self, tab_widget):
+        """Fill the content of Tab 4 (Logs)."""
+        self.log_box = QTextEdit(readOnly=True)
+        tab_layout = QVBoxLayout()
+        tab_layout.addWidget(self.log_box)
+        tab_widget.setLayout(tab_layout)
+
+    def add_log(self, message, color):
+        if color == "red":
+            self.log_box.setTextColor("red")
+        else:
+            self.log_box.setTextColor("black")
+        self.log_box.append(message)
 
     def toggle_activation(self, table_widget, row: int):
         """

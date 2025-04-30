@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QApplication
 
 from hardware.model_init import Model
 from controller.controller import Controller
+from source.utilities.logging import Logging
 from view.view_init import StartUpWindow
 
 
@@ -44,19 +45,22 @@ if __name__ == '__main__':
     # focused on UI tasks, while the Model remains unaware of the UI, leading to a more modular and maintainable
     # application structure.
 
+    #Logger: Logs all events.
+    logger = Logging(enable_print=True)
+
     # Model: Contains the data and the long-running task.
-    model = Model()
+    model = Model(logger)
     print("Model initialized")
 
     # View: Manages the GUI components.
     # .show() is a property of QWidget: View extends QMainWindow, QMainWindow extends QWidget.
-    view = StartUpWindow()
+    view = StartUpWindow(logger)
     view.show()
     print("View initialized")
 
     # Controller: Handles the interaction between the Model and the View,
     # including starting the background task and updating the view_OLD when the task is complete.
-    controller = Controller(model, view)
+    controller = Controller(model, view, logger)
 
     # Starts the application’s event loop, which waits for user interactions and updates the GUI accordingly.
     # The application will keep running until app.quit() is called or the main window is closed.

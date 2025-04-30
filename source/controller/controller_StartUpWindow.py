@@ -11,11 +11,12 @@ from source.view.tabs.view_imaging import ImagingView
 class StartUpWindowController:
     new_frame_signal = Signal(QImage)  # Signal to send frame
 
-    def __init__(self, model, view, threadpool):
+    def __init__(self, model, view, logger, threadpool):
         self.threads = {}
         self.model = model
         self.view = view
         self.threadpool = threadpool
+        self.logger = logger
 
         # Connected devices
         self.connected_devices = self.model.device_manager.list_connected_devices()
@@ -24,6 +25,7 @@ class StartUpWindowController:
         self.view.device_activate_click.connect(self.on_device_activated)
         self.view.on_settings_clicked.connect(self.open_settings_window)
         self.view.new_project.connect(self.new_project)
+        self.logger.update.connect(self.view.add_log)
 
         # On initialization detect camera_models send reload gui
         self.reload_devices()
