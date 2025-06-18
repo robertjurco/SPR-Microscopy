@@ -1,6 +1,8 @@
 from PySide6.QtCore import Qt
-from source.view.settings.view_settings_camera import ImageDisplay
+
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QComboBox, QLabel, QPushButton, QHBoxLayout, QSplitter, QSpinBox
+
+from source.view.widgets.image_display import ImageDisplay
 from source.view.tabs.misc import PlotWidget  # Assuming this is a custom widget for plotting
 
 class ImagingView(QWidget):

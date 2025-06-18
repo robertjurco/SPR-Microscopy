@@ -4,7 +4,6 @@ from typing import Dict, Any
 from PySide6.QtCore import QThread
 from pypylon import pylon
 from pylablib.devices import Thorlabs
-from scipy.sparse.csgraph import connected_components
 
 import source.hardware.slms.EXULUS_COMMAND_LIB as ThorlabsExulus
 from source.hardware.camera.camera_models.basler import Basler
@@ -201,3 +200,4 @@ class DeviceManager:
 
     def set_device_settings(self, serial: str, settings: dict):
         self.loaded_devices[serial].set_all_settings(settings)
+

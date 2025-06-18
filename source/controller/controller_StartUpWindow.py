@@ -1,10 +1,12 @@
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QImage
-from plumbum.cli import switch
+from PySide6.QtWidgets import QMessageBox, QPushButton, QListWidget, QLabel, QVBoxLayout, QDialog
 
 from source.controller.projects.controller_camera_FPS import CameraFPSController
+from source.controller.projects.controller_camera_noise import CameraNoiseController
 from source.controller.settings.controller_settings_camera import CameraSettingsController
 from source.view.tabs.view_camera_FPS import CameraFPSView
+from source.view.tabs.view_camera_noise import CameraNoiseView
 from source.view.tabs.view_imaging import ImagingView
 
 
@@ -74,5 +76,80 @@ class StartUpWindowController:
                 self.camera_FPS_view = CameraFPSView()
                 self.camera_FPS_view.show()
                 self.camera_FPS_controller = CameraFPSController(self.model, self.camera_FPS_view)
+            case "Camera_noise":
+                dialog = CameraSelectorDialog(self.model)
+                if dialog.exec() == QDialog.Accepted:
+                    selected_serial = dialog.get_selected_serial()
+
+                    camera = self.model.device_manager.loaded_devices[selected_serial]
+                    width = camera.get_width_min_max()[1]
+                    height = camera.get_height_min_max()[1]
+                    camera.set_width(width)
+                    camera.set_height(height)
+
+                    self.camera_noise_view = CameraNoiseView(width, height)
+                    self.camera_noise_view.show()
+                    self.camera_noise_view.show()
+                    self.camera_noise_controller = CameraNoiseController(self.model, self.camera_noise_view,
+                                                                         serial=selected_serial)
+
+                else:
+                    print("Camera selection canceled.")
+
             case "SLM":
                 pass
+
+    def select_camera(self):
+        dialog = CameraSelectorDialog(self.model, self)
+        if dialog.exec() == QDialog.Accepted:
+            self.selected_camera_serial = dialog.get_selected_serial()
+            print("Selected camera serial:", self.selected_camera_serial)
+        else:
+            print("Camera selection cancelled.")
+
+class CameraSelectorDialog(QDialog):
+    def __init__(self, model, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Select Camera")
+        self.setModal(True)
+        self.setMinimumSize(300, 200)
+
+        self.model = model
+        self.selected_serial = None
+
+        self._setup_ui()
+        self._populate_camera_list()
+
+    def _setup_ui(self):
+        layout = QVBoxLayout()
+
+        label = QLabel("Select camera:")
+        self.device_list = QListWidget()
+
+        self.ok_button = QPushButton("OK")
+        self.ok_button.clicked.connect(self._on_ok_clicked)
+
+        layout.addWidget(label)
+        layout.addWidget(self.device_list)
+        layout.addWidget(self.ok_button)
+
+        self.setLayout(layout)
+
+    def _populate_camera_list(self):
+        connected_devices = self.model.device_manager.list_connected_devices()
+        for serial, info in connected_devices.items():
+            device_type = info.get('type', None)
+            if device_type == 'camera' and self.model.device_manager.is_device_loaded(serial):
+                self.device_list.addItem(serial)
+
+    def _on_ok_clicked(self):
+        selected_items = self.device_list.selectedItems()
+        if not selected_items:
+            QMessageBox.warning(self, "No Selection", "Please select a camera.")
+            return
+
+        self.selected_serial = selected_items[0].text()
+        self.accept()  # Close dialog and return success
+
+    def get_selected_serial(self):
+        return self.selected_serial

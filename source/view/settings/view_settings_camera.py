@@ -1,85 +1,9 @@
-from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QPixmap, QImage
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QSpinBox, QPushButton, QFormLayout, QDialog, QHBoxLayout, \
-    QSizePolicy, QLayout, QDoubleSpinBox
-import cv2  # OpenCV for resizing
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QSpinBox, QPushButton, QFormLayout, QHBoxLayout, \
+    QDoubleSpinBox
 
+from source.view.widgets.image_display import ImageDisplay
 
-class ImageDisplay(QWidget):
-    def __init__(self, scale_factor: float = 0.5, preferred_width: int = None, preferred_height: int = None):
-        super().__init__()
-        self.label = QLabel(self)
-        self.label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        layout = QVBoxLayout()
-        layout.addWidget(self.label)
-        self.setLayout(layout)
-
-        # Store the scaling parameters
-        self.scale_factor = scale_factor
-        self.preferred_width = preferred_width
-        self.preferred_height = preferred_height
-
-        # Ensure that only one parameter is set: either scale_factor or preferred dimensions
-        if (self.scale_factor != 1.0 and self.preferred_width is not None and self.preferred_height is not None):
-            print(
-                "Warning: Both scaling factor and preferred width/height provided. Using preferred width/height instead.")
-
-        # Timer for updating the image at 60 FPS
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update_image)
-        self.timer.start(1000.0 / 60)  # 60 FPS
-
-        self.current_image = None
-        self.qimage = None  # Reusable QImage instance
-
-    def update_image(self):
-        if self.current_image is not None:
-            image_to_display = self.current_image  # Default to original image
-
-            # Handle scaling if scale_factor is provided and no preferred width/height
-            if self.scale_factor != 1.0 and self.preferred_width is None and self.preferred_height is None:
-                height, width = self.current_image.shape[:2]
-                new_width = int(width * self.scale_factor)
-                new_height = int(height * self.scale_factor)
-                image_to_display = self.resize_image(self.current_image, new_width, new_height)
-
-            # Handle resizing to exact preferred width/height if provided
-            elif self.preferred_width is not None and self.preferred_height is not None:
-                image_to_display = self.resize_image(self.current_image, self.preferred_width, self.preferred_height)
-
-            # Display the resized image
-            self.display_image(image_to_display)
-
-    def display_image(self, image):
-        """ Helper function to display the image in the label """
-        if len(image.shape) == 2:  # Grayscale image
-            height, width = image.shape
-            bytes_per_line = width  # One byte per pixel for grayscale
-            qimage = QImage(image.data, width, height, bytes_per_line, QImage.Format.Format_Grayscale8)
-            self.label.setPixmap(QPixmap.fromImage(qimage))
-        elif len(image.shape) == 3:  # Color image
-            height, width, channel = image.shape
-            bytes_per_line = channel * width
-
-            if channel == 3:  # Assuming RGB
-                qimage = QImage(image.data, width, height, bytes_per_line, QImage.Format.Format_RGB888)
-                self.label.setPixmap(QPixmap.fromImage(qimage))
-            else:
-                print("Unsupported channel count.")
-        else:
-            print("Invalid image shape:", image.shape)
-
-    def resize_image(self, image, new_width, new_height):
-        """ Resize the image to the new width and height """
-        return cv2.resize(image, (new_width, new_height))
-
-    def set_image(self, image):
-        self.current_image = image
-        self.update_image()
-
-    def set_image_from_file(self, file_path):
-        pixmap = QPixmap(file_path)
-        self.label.setPixmap(pixmap)
 
 class ViewCameraSettings(QWidget):
     """

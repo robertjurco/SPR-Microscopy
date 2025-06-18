@@ -13,6 +13,8 @@ class PlotWidget(QWidget):
     def __init__(self, parent=None, x_label="X-axis", y_label="Y-axis", log_scale=False, scatter_plot=False):
         super().__init__(parent)
 
+        self.setFixedSize(600, 600)
+
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
         self.toolbar = NavigationToolbar(self.canvas, self)
@@ -46,7 +48,7 @@ class PlotWidget(QWidget):
         self.data = {"x": None, "y": None}  # To store the plotted data
 
     @Slot()
-    def plot_data(self, x=None, y=None):
+    def plot_data(self, x=None, y=None, scatter_plot=False, color='blue', clear=False):
         """
         Plot data as a scatter plot or line plot.
         If data is passed, plot it.
@@ -54,16 +56,17 @@ class PlotWidget(QWidget):
         if x is None or y is None:
             return  # Don't plot if data is not provided
 
-        self.ax.clear()  # Clear previous plots
+        if clear:
+            self.ax.clear()  # Clear previous plots
 
         if self.log_scale:
             self.ax.set_xscale("log")
             self.ax.set_yscale("log")
 
-        if self.scatter_plot:
-            self.ax.scatter(x, y, color="blue", s=2)
+        if scatter_plot:
+            self.ax.scatter(x, y, color=color, s=2)
         else:
-            self.ax.plot(x, y, color="blue")
+            self.ax.plot(x, y, color=color)
 
         self.ax.set_xlabel(self.x_label)
         self.ax.set_ylabel(self.y_label)

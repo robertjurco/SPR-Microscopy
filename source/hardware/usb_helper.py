@@ -10,7 +10,6 @@ def get_usb_device_tree():
     devices = {}
 
     # Query USB devices
-    print("Getting USB devices...")
     for dev in c.query("SELECT * FROM Win32_PnPEntity WHERE PNPClass = 'USB'"):
         if not hasattr(dev, 'DeviceID') or not dev.DeviceID:
             continue
@@ -23,7 +22,6 @@ def get_usb_device_tree():
         }
 
     # Query USB controllers
-    print("Getting USB controllers...")
     for controller in c.query("SELECT * FROM Win32_USBController"):
         if not hasattr(controller, 'DeviceID') or not controller.DeviceID:
             continue
@@ -35,12 +33,8 @@ def get_usb_device_tree():
             "IsController": True
         }
 
-    # Print all found devices for debugging
-    print(f"Found {len(devices)} USB devices/controllers")
-
-    # Build the tree structure - IMPORTANT: This is where the fix is
+    # Build the tree structure
     connections = defaultdict(list)
-    print("Getting USB connections...")
 
     for assoc in c.query("SELECT * FROM Win32_USBControllerDevice"):
         try:
@@ -48,21 +42,14 @@ def get_usb_device_tree():
             antecedent = str(assoc.Antecedent)  # Controller
             dependent = str(assoc.Dependent)  # Device
 
-            # Print association info for debugging
-            print("\nAssociation found:")
-            print(f"Antecedent (first 60 chars): {antecedent[:60]}...")
-            print(f"Dependent (first 60 chars): {dependent[:60]}...")
-
-            # IMPORTANT: The key fix - Win32_USBControllerDevice associations can be in two directions
             # Try both possibilities and see which one works
-
             # Try first interpretation (Antecedent=Controller, Dependent=Device)
-            ctrl_match1 = re.search(r'DeviceID ?= ?"?([^";\n]+)', antecedent)
-            dev_match1 = re.search(r'DeviceID ?= ?"?([^";\n]+)', dependent)
+            ctrl_match1 = re.search(r'DeviceID ?= ?\"?([^\";\\n]+)', antecedent)
+            dev_match1 = re.search(r'DeviceID ?= ?\"?([^\";\\n]+)', dependent)
 
             # Try reverse interpretation (Antecedent=Device, Dependent=Controller)
-            ctrl_match2 = re.search(r'DeviceID ?= ?"?([^";\n]+)', dependent)
-            dev_match2 = re.search(r'DeviceID ?= ?"?([^";\n]+)', antecedent)
+            ctrl_match2 = re.search(r'DeviceID ?= ?\"?([^\";\\n]+)', dependent)
+            dev_match2 = re.search(r'DeviceID ?= ?\"?([^\";\\n]+)', antecedent)
 
             # Check first interpretation
             if ctrl_match1 and dev_match1:
@@ -73,7 +60,6 @@ def get_usb_device_tree():
                 if controller_id in devices and device_id in devices:
                     if devices[controller_id].get("IsController", False):
                         connections[controller_id].append(device_id)
-                        print(f"Added relationship: {controller_id[:30]}... -> {device_id[:30]}...")
 
             # Check second interpretation
             if ctrl_match2 and dev_match2:
@@ -84,7 +70,6 @@ def get_usb_device_tree():
                 if controller_id in devices and device_id in devices:
                     if devices[controller_id].get("IsController", False):
                         connections[controller_id].append(device_id)
-                        print(f"Added relationship: {controller_id[:30]}... -> {device_id[:30]}...")
 
         except Exception as e:
             print(f"Error: {str(e)}")
@@ -92,48 +77,29 @@ def get_usb_device_tree():
     return connections, devices
 
 
-def print_usb_tree():
+def count_usb_ports():
     connections, devices = get_usb_device_tree()
 
-    print("\n====== USB DEVICE TREE ======\n")
+    total_ports = 0
+    occupied_ports = 0
 
-    # Find controller devices
-    controllers = {device_id: info for device_id, info in devices.items()
-                   if info.get("IsController", False)}
-
-    # Print each controller and its devices
-    for controller_id, info in controllers.items():
-        name = info["Name"]
-        status = info["Status"]
-
-        print(f"🧰 CONTROLLER: {name}")
-        print(f"   Status: {status}")
-        print(f"   ID: {controller_id}")
-        print()
-
-        # Print connected devices
-        connected_devices = connections.get(controller_id, [])
+    # Count total ports and occupied ports
+    for controller_id, connected_devices in connections.items():
+        total_ports += 1
         if connected_devices:
-            for i, device_id in enumerate(connected_devices):
-                if device_id in devices:
-                    device = devices[device_id]
-                    last = i == len(connected_devices) - 1
-                    prefix = "└─" if last else "├─"
+            occupied_ports += 1
 
-                    print(f"   {prefix} 📱 {device['Name']}")
-                    print(f"      Status: {device['Status']}")
-                    print(f"      ID: {device_id}")
-                    print()
-        else:
-            print("   No connected devices found.")
-            print()
+    free_ports = total_ports - occupied_ports
 
-        print("-" * 50)
+    return total_ports, occupied_ports, free_ports
 
 
-# Run the script
+# Run the script to count USB ports
 try:
-    print_usb_tree()
+    total_ports, occupied_ports, free_ports = count_usb_ports()
+    print(f"Total USB ports: {total_ports}")
+    print(f"Occupied USB ports: {occupied_ports}")
+    print(f"Free USB ports: {free_ports}")
 except Exception as e:
     import traceback
 

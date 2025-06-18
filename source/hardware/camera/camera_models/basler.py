@@ -39,6 +39,55 @@ class Basler(Camera):
         self.target_fps = 60  # Default frame rate, this can be updated later
         self.exposure_time = None  # To track the exposure time
 
+        self.nodemap = self.cam.GetNodeMap()
+
+        self.multi_roi_info = {}
+        self._init_multi_roi_info()
+
+    def _init_multi_roi_info(self):
+        """Detect and store multiple ROI support and limits."""
+        info = {}
+
+        # Try to read sensor size
+        try:
+            info["SensorWidth"] = self.nodemap.GetNode("SensorWidth").GetValue()
+            info["SensorHeight"] = self.nodemap.GetNode("SensorHeight").GetValue()
+        except:
+            info["SensorWidth"] = None
+            info["SensorHeight"] = None
+
+        # Check if multiple ROI is supported and enabled
+        try:
+            info["MultiROIColumnsSupported"] = self.nodemap.GetNode("BslMultipleROIColumnsEnable").IsWritable()
+            info["MultiROIRowsSupported"] = self.nodemap.GetNode("BslMultipleROIRowsEnable").IsWritable()
+
+            if info["MultiROIColumnsSupported"]:
+                col_selector = self.nodemap.GetNode("BslMultipleROIColumnSelector")
+                info["MaxColumnROIs"] = col_selector.GetMax()
+            else:
+                info["MaxColumnROIs"] = 0
+
+            if info["MultiROIRowsSupported"]:
+                row_selector = self.nodemap.GetNode("BslMultipleROIRowSelector")
+                info["MaxRowROIs"] = row_selector.GetMax()
+            else:
+                info["MaxRowROIs"] = 0
+
+        except Exception as e:
+            info["MultiROIColumnsSupported"] = False
+            info["MultiROIRowsSupported"] = False
+            info["MaxColumnROIs"] = 0
+            info["MaxRowROIs"] = 0
+
+        self.multi_roi_info = info
+
+        self.print_roi_info()
+
+    def print_roi_info(self):
+        for key, value in self.multi_roi_info.items():
+            print(f"{key}: {value}")
+
+
     def close(self):
         """See :meth:`.Camera.close`."""
         self.cam.Close()

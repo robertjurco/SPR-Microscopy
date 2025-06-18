@@ -114,6 +114,7 @@ class StartUpWindow(QMainWindow):
         self.project_menu.addAction("Imaging", lambda: self.select_project("Imaging"))
         self.project_menu.addAction("Spectroscopy", lambda: self.select_project("Spectroscopy"))
         self.project_menu.addAction("Camera FPS meter", lambda: self.select_project("Camera_FPS_meter"))
+        self.project_menu.addAction("Camera noise", lambda: self.select_project("Camera_noise"))
         self.project_menu.addAction("SLM", lambda: self.select_project("SLM"))
 
         # Connect the "New Project" button to show the menu

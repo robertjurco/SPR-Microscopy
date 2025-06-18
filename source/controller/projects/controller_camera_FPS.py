@@ -1,7 +1,7 @@
 import numpy as np
 
 from source.controller.CameraWorker import CameraWorkerThread
-from source.view.tabs.view_imaging import ImagingView
+
 
 class CameraFPSController:
 
