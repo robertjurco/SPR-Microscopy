@@ -19,14 +19,13 @@ class CameraNoiseController:
 
         # Setup camera
         self.camera = self.model.device_manager.loaded_devices[self.serial]
-
-        self.worker_thread = CameraWorkerThread(self.camera)
-        self.worker_thread.frame_received.connect(self.process_frame)
-        self.worker_thread.frame_received_6FPS.connect(self.process_frame_60FPS)
-        self.worker_thread.start()  # This should start the thread and call `run`
+        self.camera_thread = None
+        self.start_camera_thread()
 
         # RIO controller
         self.ROI_controller = ROIController(self.model, self.serial, self.project_view.roi_widget, self.project_view.image_display)
+        self.ROI_controller.start_camera_thread.connect(self.start_camera_thread)
+        self.ROI_controller.stop_camera_thread.connect(self.stop_camera_thread)
 
         # data processing initialization
         self.full_well_capacity = full_well_capacity
@@ -38,6 +37,22 @@ class CameraNoiseController:
 
         # Connects
         self.project_view.button_start.clicked.connect(self.start_measurement)
+
+    def start_camera_thread(self):
+        if self.camera_thread is not None:
+            self.camera_thread.stop()
+            self.camera_thread.deleteLater()
+
+        self.camera_thread = CameraWorkerThread(self.camera)
+        self.camera_thread.frame_received.connect(self.process_frame)
+        self.camera_thread.frame_received_6FPS.connect(self.process_frame_60FPS)
+        self.camera_thread.start() # This should start the thread and call `run`
+
+    def stop_camera_thread(self):
+        if self.camera_thread is not None:
+            self.camera_thread.stop()
+            self.camera_thread.deleteLater()
+            self.camera.pause()
 
     def start_measurement(self):
         self.max_frames = self.project_view.spinbox_max_frames.value()
@@ -51,34 +66,47 @@ class CameraNoiseController:
         if len(image.shape) != 2:
             raise ValueError("Input must be a 2D grayscale image.")
 
-        # Normalize and invert: 0 → 1.0, 255 → 0.0
-        inverted = 1.0 - (image.astype(np.float32) / 255.0)
+        images = self.ROI_controller.process_ROI(image)
 
-        # multiply by well capacity
-        inverted *= self.full_well_capacity
-
-        # Initialize deque with maxlen
+        # Only initialize deque once
         if self.data is None:
-            self.data = deque(maxlen=self.max_frames)
+            self.data = {}  # Dict of {roi_id: deque}
+            for roi_id, _ in images:
+                self.data[roi_id] = deque(maxlen=self.max_frames)
 
-        # Append new frame (2D array) to history
-        self.data.append(inverted)
+        # === Process each ROI image individually ===
+        for roi_id, roi_image in images:
+            # Normalize and invert: 0 → 1.0, 255 → 0.0
+            inverted = 1.0 - (roi_image.astype(np.float32) / 255.0)
 
-        # Only process once after enough frames collected
-        if not self.processed and len(self.data) == self.max_frames:
-            self.worker_thread.stop()
+            # Multiply by full well capacity
+            inverted *= self.full_well_capacity
 
-            data_array = np.stack(self.data, axis=0)
-            mean_image = np.mean(data_array, axis=0)
-            std_image = np.std(data_array, axis=0)
-            self.means = mean_image.flatten()
-            self.stds = std_image.flatten()
-            self.processed = True  # Mark as processed
+            # Append to deque for that ROI
+            self.data[roi_id].append(inverted)
 
-            self.project_view.plot_widget.plot_data(self.means, self.stds, scatter_plot=True, color='red')
+        # === Once we have enough frames, compute statistics ===
+        if not self.processed and all(len(dq) == self.max_frames for dq in self.data.values()):
+            self.stop_camera_thread()
+            self.processed = True
+
+            color_cycle = ['red', 'green', 'blue', 'orange', 'purple', 'cyan']
+            for i, (roi_id, dq) in enumerate(self.data.items()):
+                data_array = np.stack(dq, axis=0)  # Shape: (max_frames, H, W)
+                mean_image = np.mean(data_array, axis=0)
+                std_image = np.std(data_array, axis=0)
+
+                self.means = mean_image.flatten()
+                self.stds = std_image.flatten()
+
+                color = color_cycle[i % len(color_cycle)]
+                self.project_view.plot_widget.plot_data(self.means, self.stds, scatter_plot=True, color=color)
+
+            # === Plot reference curve (same for all ROIs) ===
             x = np.linspace(0, self.full_well_capacity, 1000)
             y = np.sqrt(x)
             self.project_view.plot_widget.plot_data(x, y)
+
 
     def process_frame_60FPS(self, image):
         """This method simulates acquiring a frame."""

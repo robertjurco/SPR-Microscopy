@@ -73,44 +73,63 @@ class ImageDisplay(QWidget):
 
         self.rois = None
 
+        self.current_woi = (0, 0, self.width, self.height)
+
 
     def display_image(self):
         if self.current_image is None:
             return
 
-        base_img = self.current_image
+        # === Step 1: Prepare a full-size canvas ===
+        canvas = np.full((self.height, self.width, 3), (240, 220, 230), dtype=np.uint8)  # Pinkish background
+
+        # === Step 2: Get WOI offset for image placement ===
+        offset_x, offset_y, woi_width, woi_height = self.current_woi
+
+        cropped_img = self.current_image
+        ch, cw = cropped_img.shape[:2]
+
+        # === Step 3: Compute destination bounds on canvas ===
+        x_end = min(self.width, offset_x + cw)
+        y_end = min(self.height, offset_y + ch)
+
+        roi_w = x_end - offset_x
+        roi_h = y_end - offset_y
+
+        if roi_w > 0 and roi_h > 0:
+            # Crop source image if needed
+            canvas[offset_y:y_end, offset_x:x_end] = cropped_img[0:roi_h, 0:roi_w]
 
         # === Re-render overlay if needed ===
         if self.rois is not None:
             for roi in self.rois.values():
                 x, y, w, h = roi["x"], roi["y"], roi["width"], roi["height"]
-                cv2.rectangle(base_img, (x, y), (x + w, y + h), (51, 255, 0), 2)
+                cv2.rectangle(canvas, (x, y), (x + w, y + h), (51, 255, 0), 2)
 
         # === Draw dragging rectangle if present ===
         if self.drawing and self.start_point and self.end_point:
             # Scale mouse coords to image space
             label_width = self.label.width()
             label_height = self.label.height()
-            img_height, img_width = self.current_image.shape[:2]
 
-            scale_x = img_width / label_width
-            scale_y = img_height / label_height
+            scale_x = self.width / label_width
+            scale_y = self.height / label_height
 
             x1 = int(self.start_point.x() * scale_x)
             y1 = int(self.start_point.y() * scale_y)
             x2 = int(self.end_point.x() * scale_x)
             y2 = int(self.end_point.y() * scale_y)
 
-            cv2.rectangle(base_img, (x1, y1), (x2, y2), (51, 255, 0), 2)
+            cv2.rectangle(canvas, (x1, y1), (x2, y2), (51, 255, 0), 2)
 
 
         # === Apply final resizing (scaling or preferred size) ===
-        img_to_show = base_img
+        img_to_show = canvas
         if self.preferred_width and self.preferred_height:
-            img_to_show = self.resize_image(base_img, self.preferred_width, self.preferred_height)
+            img_to_show = self.resize_image(canvas, self.preferred_width, self.preferred_height)
         elif self.scale_factor != 1.0:
-            h, w = base_img.shape[:2]
-            img_to_show = self.resize_image(base_img, int(w * self.scale_factor), int(h * self.scale_factor))
+            h, w = canvas.shape[:2]
+            img_to_show = self.resize_image(canvas, int(w * self.scale_factor), int(h * self.scale_factor))
 
         # === Convert to QImage and show ===
         height, width, channel = img_to_show.shape
@@ -141,7 +160,7 @@ class ImageDisplay(QWidget):
     def mouse_move(self, event):
         if self.drawing:
             self.end_point = event.pos()
-            #self.display_image()  # Triggers redraw including rectangle
+            self.display_image()  # Triggers redraw including rectangle
 
     def mouse_release(self, event):
         if self.drawing:

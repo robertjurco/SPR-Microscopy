@@ -129,7 +129,6 @@ class Basler(Camera):
     ################################################## SETTERS #########################################################
     def set_width(self, width: int):
         """Sets the camera resolution width."""
-        print(width)
         self.cam.Width.SetValue(width)
 
 

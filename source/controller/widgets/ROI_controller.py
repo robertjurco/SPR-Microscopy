@@ -1,6 +1,12 @@
+from PySide6.QtCore import QObject, Signal
 
-class ROIController:
+
+class ROIController(QObject):
+    stop_camera_thread = Signal()
+    start_camera_thread = Signal()
+
     def __init__(self, model, serial, roi_widget, image_display):
+        super().__init__()
         self.rois = {}  # Dict of {id: region_dict}
 
         self.model = model
@@ -15,6 +21,7 @@ class ROIController:
         self.image_display = image_display
         self.image_display.add_ROI.connect(self.new_ROI)
 
+        self.current_woi = (0, 0, self.image_display.width, self.image_display.height)
 
     def new_ROI(self, roi_array):
         x, y, w, h = roi_array
@@ -58,7 +65,7 @@ class ROIController:
             return [("full_image", image.copy())]
 
         cropped_images = []
-        for region in self.rois.values():
+        for roi_id, region in self.rois.items():
             x, y = region["x"], region["y"]
             w, h = region["width"], region["height"]
 
@@ -67,28 +74,54 @@ class ROIController:
             x2, y2 = min(image.shape[1], x + w), min(image.shape[0], y + h)
 
             cropped = image[y1:y2, x1:x2]
-            cropped_images.append((region["id"], cropped))
+            cropped_images.append((roi_id, cropped))
 
         return cropped_images
 
     def required_woi(self):
         if not self.rois:
-            return None # no ROI
+            return (0, 0, self.image_display.width, self.image_display.height) # no ROI
 
+        # Calculate required WOI settings
         min_x = min(region["x"] for region in self.rois.values())
         min_y = min(region["y"] for region in self.rois.values())
         max_x = max(region["x"] + region["width"] for region in self.rois.values())
         max_y = max(region["y"] + region["height"] for region in self.rois.values())
 
-        width = max_x - min_x
-        height = max_y - min_y
+        required_offset_x = min_x
+        required_offset_y = min_y
+        required_width = max_x - min_x
+        required_height = max_y - min_y
 
-        return (min_x, min_y, width, height)
+        # === Get allowed WOI constraints from the camera ===
+        camera_settings = self.model.device_manager.get_device_settings(self.serial)
+        woi_limits = camera_settings['woi']['min_max']
+
+        offset_x_min, offset_x_max = woi_limits['offsetX']
+        offset_y_min, offset_y_max = woi_limits['offsetY']
+        min_width, max_width = woi_limits['width']
+        min_height, max_height = woi_limits['height']
+
+        # === Clamp offset and size to the allowed min/max values ===
+        clamped_offset_x = max(offset_x_min, min(required_offset_x, offset_x_max))
+        clamped_offset_y = max(offset_y_min, min(required_offset_y, offset_y_max))
+
+        clamped_width = max(min_width, min(required_width, max_width))
+        clamped_height = max(min_height, min(required_height, max_height))
+
+        return (clamped_offset_x, clamped_offset_y, clamped_width, clamped_height)
 
     def set_ROI_settings(self):
         woi = self.required_woi() # Needs to be extended for all Serials
         woi_settings = { 'woi': woi }
-        print(woi_settings)
+
+        self.stop_camera_thread.emit()
 
         self.model.device_manager.set_device_settings(self.serial, woi_settings)
+
+        # === NEW: Save currently applied WOI ===
+        self.current_woi = woi
+        self.image_display.current_woi = woi
+
+        self.start_camera_thread.emit()
 
