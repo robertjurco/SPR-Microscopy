@@ -86,6 +86,7 @@ class StartUpWindowController:
                     height = camera.get_height_min_max()[1]
                     camera.set_width(width)
                     camera.set_height(height)
+                    camera.set_bitdepth(12)
 
                     self.camera_noise_view = CameraNoiseView(width, height)
                     self.camera_noise_view.show()

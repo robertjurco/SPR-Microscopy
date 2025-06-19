@@ -10,15 +10,17 @@ def filter_intensities(image, show_max_intensity=False, show_min_intensity=False
     if len(image.shape) != 2:
         raise ValueError("Input must be a 2D grayscale image.")
 
-    # Convert to 3-channel grayscale image
-    color_image = cv2.merge([image, image, image])  # BGR format
+    # === Convert from Mono12 (0–4095) to Mono8 (0–255) ===
+    image_8bit = np.clip((image / 4095.0) * 255, 0, 255).astype(np.uint8)
 
-    # Highlight 0-intensity pixels in blue if flag is on
+    # Convert to 3-channel grayscale image (BGR format)
+    color_image = cv2.merge([image_8bit, image_8bit, image_8bit])
+
+    # Highlight saturated pixels
     if show_min_intensity:
-        zero_mask = (image == 255)
+        zero_mask = (image == 4095)  # Original Mono12 condition
         color_image[zero_mask] = [255, 0, 0]  # Blue in BGR
 
-    # Highlight 255-intensity pixels in red if flag is on
     if show_max_intensity:
         full_mask = (image == 0)
         color_image[full_mask] = [0, 0, 255]  # Red in BGR

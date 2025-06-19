@@ -1,5 +1,5 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QComboBox, QLabel, QPushButton, QHBoxLayout, QSplitter, QSpinBox
-from source.view.tabs.misc import PlotWidget  # Assuming this is a custom widget for plotting
+from PySide6.QtWidgets import QComboBox, QLabel, QHBoxLayout, QSpinBox
+from source.view.widgets.plotting_widgets import PlotWidget  # Assuming this is a custom widget for plotting
 
 import csv
 import numpy as np

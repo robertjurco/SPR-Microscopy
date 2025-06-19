@@ -102,12 +102,19 @@ class ROIController(QObject):
         min_width, max_width = woi_limits['width']
         min_height, max_height = woi_limits['height']
 
-        # === Clamp offset and size to the allowed min/max values ===
+        # Clamp offsets first
         clamped_offset_x = max(offset_x_min, min(required_offset_x, offset_x_max))
         clamped_offset_y = max(offset_y_min, min(required_offset_y, offset_y_max))
 
-        clamped_width = max(min_width, min(required_width, max_width))
-        clamped_height = max(min_height, min(required_height, max_height))
+        # Adjust width/height to still cover the same area if offset was shifted
+        delta_x = required_offset_x - clamped_offset_x
+        delta_y = required_offset_y - clamped_offset_y
+
+        adjusted_width = required_width + delta_x
+        adjusted_height = required_height + delta_y
+
+        clamped_width = max(min_width, min(adjusted_width, max_width))
+        clamped_height = max(min_height, min(adjusted_height, max_height))
 
         return (clamped_offset_x, clamped_offset_y, clamped_width, clamped_height)
 
