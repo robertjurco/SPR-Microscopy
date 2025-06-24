@@ -19,24 +19,27 @@ class StartUpWindowController:
         self.view = view
         self.threadpool = threadpool
         self.logger = logger
+        self.active_projects = {}  # Track active projects
 
-        # Connected devices
-        self.connected_devices = self.model.device_manager.list_connected_devices()
+        # Connect signals
+        self._connect_signals()
 
-        # Connect signals to slots
+        # Initialize devices
+        self.reload_devices()
+
+    def _connect_signals(self) -> None:
+        """Set up signal connections."""
         self.view.device_activate_click.connect(self.on_device_activated)
         self.view.on_settings_clicked.connect(self.open_settings_window)
         self.view.new_project.connect(self.new_project)
         self.logger.update.connect(self.view.add_log)
 
-        # On initialization detect camera_models send reload gui
-        self.reload_devices()
-
-    def reload_devices(self):
+    def reload_devices(self) -> None:
+        """Reload and refresh device list."""
         self.model.device_manager.auto_detect_devices()
         self.connected_devices = self.model.device_manager.list_connected_devices()
-
         self.view.reload_tab_Available_Devices(self.connected_devices)
+
 
     def on_device_activated(self, serial: str, already_active: bool):
         """

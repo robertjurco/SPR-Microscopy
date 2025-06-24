@@ -29,3 +29,6 @@ class Logging(QObject):
 
     def error(self, message):
         self._log(message, "error", color_code="31", color_name="red")
+
+# Create a globally shared logger instance
+logger = Logging()

@@ -53,28 +53,54 @@ class DeviceManager:
 
         self.logger = logger
 
-    def auto_detect_devices(self):
-        #get_usb_info()
-        #self.usb_devices_info = get_usb_info()
-        #print(self.usb_devices_info)
+    def auto_detect_devices(self) -> int:
+        """
+        Automatically detect and register all supported devices.
 
+        Returns:
+            int: Number of detected devices
+        """
         try:
-            # Temporary set to track currently connected devices
             current_device_serials = set()
 
             # Detect cameras
+            self._detect_cameras(current_device_serials)
+
+            # Detect motion control devices
+            self._detect_motion_devices(current_device_serials)
+
+            # Detect SLM devices
+            self._detect_slm_devices(current_device_serials)
+
+            # Remove disconnected devices
+            self._cleanup_disconnected_devices(current_device_serials)
+
+            self.logger.info(f"Detected {len(self.connected_devices)} devices")
+            return len(self.connected_devices)
+
+        except Exception as e:
+            self.logger.error(f"Error during device detection: {str(e)}")
+            return 0
+
+    def _detect_cameras(self, current_device_serials: set) -> None:
+        """Detect and register camera devices."""
+        try:
             camera_devices = pylon.TlFactory.GetInstance().EnumerateDevices()
             for device in camera_devices:
                 serial_number = device.GetSerialNumber()
                 current_device_serials.add(serial_number)
                 if serial_number not in self.connected_devices:
                     self.connected_devices[serial_number] = {
-                        'name': 'Basler ' + device.GetModelName(),
+                        'name': f'Basler {device.GetModelName()}',
                         'type': 'camera',
                         'status': 'connected'
                     }
+        except Exception as e:
+            self.logger.error(f"Error detecting cameras: {str(e)}")
 
-            # Detect motion control devices
+    def _detect_motion_devices(self, current_device_serials: set) -> None:
+        """Detect and register motion control devices."""
+        try:
             motion_devices = Thorlabs.list_kinesis_devices()
             for serial_number, description in motion_devices:
                 current_device_serials.add(serial_number)
@@ -84,8 +110,12 @@ class DeviceManager:
                         'type': 'k_cube',
                         'status': 'connected'
                     }
+        except Exception as e:
+            self.logger.error(f"Error detecting motion devices: {str(e)}")
 
-            # Detect SLM devices
+    def _detect_slm_devices(self, current_device_serials: set) -> None:
+        """Detect and register SLM devices."""
+        try:
             slm_devices = ThorlabsExulus.EXULUSListDevices()
             for device in slm_devices:
                 serial_number = device[0]
@@ -96,17 +126,17 @@ class DeviceManager:
                         'type': 'slm',
                         'status': 'connected'
                     }
-
-            # Remove devices from dict if not connected
-            disconnected_devices = [serial for serial in self.connected_devices if serial not in current_device_serials]
-            for serial in disconnected_devices:
-                del self.connected_devices[serial]
-
-            print(self.connected_devices)
-            return len(self.connected_devices)
         except Exception as e:
-            print(f"Error during device detection: {e}")
-            return 0
+            self.logger.error(f"Error detecting SLM devices: {str(e)}")
+
+    def _cleanup_disconnected_devices(self, current_device_serials: set) -> None:
+        """Remove devices that are no longer connected."""
+        disconnected_devices = [serial for serial in self.connected_devices
+                                if serial not in current_device_serials]
+        for serial in disconnected_devices:
+            self.logger.info(f"Device {serial} disconnected")
+            del self.connected_devices[serial]
+
 
     def list_connected_devices(self) -> Dict[str, Dict[str, Any]]:
         """

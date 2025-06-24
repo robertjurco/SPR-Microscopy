@@ -2,7 +2,6 @@ from PySide6.QtCore import QThreadPool
 
 from source.controller.controller_StartUpWindow import StartUpWindowController
 
-
 class Controller:
     def __init__(self, model, view, logger):
         self.model = model
